@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -30,16 +31,26 @@ public class DataUpdater extends BroadcastReceiver {
     private static final String TAG = "DataUpdater";
 
     @Override
-    public void onReceive(Context ctx, Intent i) {
-        int type = i.getIntExtra("type", -1);
-        if (Globe.DEBUG) Log.d(TAG, "Called. Type is " + type);
+    public void onReceive(final Context ctx, Intent i) {
+        if ("android.intent.action.BOOT_COMPLETED".equals(i.getAction()) || "android.intent.action.QUICKBOOT_POWERON".equals(i.getAction())) {
+            // device rebooted, reset the alarms (just start the app after a minute - change this later)
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    ctx.startActivity(new Intent(ctx, Launcher.class));
+                }
+            }, 60 * 1000);
+        } else {
+            int type = i.getIntExtra("type", -1);
+            if (Globe.DEBUG) Log.d(TAG, "Called. Type is " + type);
 
-        if (type == 0) DataUpdater.collectFitbitData(ctx);
-        if (type == 1) DataUpdater.sendNotification(ctx, i);
-        // if (type == 2) DataUpdater.airplaneModeOff(ctx);
-        if (type == 3) Home.updateButtons();
+            if (type == 0) DataUpdater.collectFitbitData(ctx);
+            if (type == 1) DataUpdater.sendNotification(ctx, i);
+            // if (type == 2) DataUpdater.airplaneModeOff(ctx);
+            if (type == 3) Home.updateButtons();
 
-        // I might move all of the functions to Globe.. we'll see
+            // I might move all of the functions to Globe.. we'll see
+        }
     }
 
     private static void collectFitbitData(final Context ctx) {

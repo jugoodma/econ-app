@@ -1,0 +1,41 @@
+<resources>
+    <!-- Manifest -->
+    <string name="app_name">Fitbit Economics Study</string>
+
+    <!-- Launcher -->
+    <string name="logo_desc">Logo</string>
+    <string name="email">e-mail</string>
+    <string name="password">password</string>
+    <string name="sign">Sign In</string>
+    <string name="newUser">Create Account</string>
+
+    <!-- Home -->
+    <string name="out">Sign Out</string>
+    <string name="welcome">Welcome Participant: %1$s</string>
+    <string name="yourGoal">Your goal bedtime is %1$s</string>
+    <string name="rewards">Coffee Rewards</string>
+    <string name="bed">I\'m in Bed!</string>
+    <string name="login_fitbit">Login to FitBit</string>
+
+    <!-- NewUser -->
+    <string name="reenter">re-enter password</string>
+    <string name="submit">submit</string>
+
+    <!-- InBed -->
+    <string name="bedTime">Goal bedtime: %1$s</string>
+    <string name="invalidBed">Sorry, you missed your bedtime! Make sure to get to bed on time to earn your free coffee. Now lock your phone and get some sleep.</string>
+    <string name="validBed">You\'ve earned a free cup of coffee! Redeem your coupon tomorrow morning before %1$s at ABC Coffee Shop. Now lock your phone and get some sleep.</string>
+    <string name="inBed">I\'m in bed - earn my FREE coffee!</string>
+
+    <!-- CoffeeRewards -->
+    <string name="redeemTime">Coupon must be redeemed by: %1$s</string>
+    <string name="redeem">Redeem Your FREE Coffee!</string>
+    <string name="cancelButton">Cancel</string>
+    <string name="redeemButton">Redeem</string>
+    <string name="valid">%1$s\nHave the Barista press \'Redeem\' when you are ready to redeem your free coffee!</string>
+    <string name="invalidCoffee">Sorry, you didn\'t reach your goal bedtime!</string>
+    <string name="syncFitbit">You need to sync your Fitbit!</string>
+    <string name="noBedButton">You did not press the \"in bed\" button!</string>
+    <string name="pastCoupon">It\'s past your redeem time!</string>
+    <string name="thanks">Thanks! Enjoy your free coffee!</string>
+</resources>

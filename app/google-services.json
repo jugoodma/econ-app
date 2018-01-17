@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "70242543248",
+    "firebase_url": "https://sleep-coffee-research.firebaseio.com",
+    "project_id": "sleep-coffee-research",
+    "storage_bucket": "sleep-coffee-research.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:70242543248:android:6baf953855ee1a68",
+        "android_client_info": {
+          "package_name": "edu.ucsd.justingoodman.sleep_coffee_research"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "70242543248-dbmgit1s7rf4u4j1dc1l5mgejjov2cbn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "edu.ucsd.justingoodman.sleep_coffee_research",
+            "certificate_hash": "ab6ca429c1800705d5172bccc45b17e2219b4b54"
+          }
+        },
+        {
+          "client_id": "70242543248-vgsig0va0lh5qod1hd9sd4f0bv05pbuv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAyG4E0k2Y7SJrF-Qgm4J_RGgM8vp8RE2I"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "70242543248-vgsig0va0lh5qod1hd9sd4f0bv05pbuv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

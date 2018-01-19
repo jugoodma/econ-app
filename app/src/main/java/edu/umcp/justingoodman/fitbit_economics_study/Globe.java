@@ -2,6 +2,7 @@ package edu.umcp.justingoodman.fitbit_economics_study;
 
 import android.content.Context;
 import android.net.Uri;
+import android.os.Handler;
 import android.support.customtabs.CustomTabsIntent;
 import android.util.Base64;
 import android.util.Log;
@@ -228,29 +229,44 @@ class Globe {
                     if (Globe.DEBUG) Log.d(TAG, "Here's the result - " + result);
                     try {
                         JSONArray arr = (new JSONObject(result)).getJSONArray("sleep"); // we only need the sleep array
+                        JSONArray test;
                         JSONObject j;
                         Map<String, Object> data = new HashMap<>();
                         Iterator<String> idx;
                         String s;
                         int len = arr.length();
+                        boolean flag;
 
                         for (int i = 0; i < len; i++) {
+                            flag = true;
                             try {
                                 j = (JSONObject) arr.get(i);
                             } catch (Exception e) {
                                 j = new JSONObject();
                             }
                             if (Globe.DEBUG) Log.d(TAG, j.toString());
+                            // we need to test this to be sure no one is cheating
+                            // the data array will generally have one element if the user entered their own sleep data
                             try {
-                                idx = j.keys();
-                                while (idx.hasNext()) {
-                                    s = idx.next();
-                                    if (!s.equals("levels")) // skip the levels object
-                                        data.put(s, j.get(s));
-                                }
-                                Globe.dbRef.child(Globe.user.getUid()).child("_sleep").child(j.get("dateOfSleep").toString()).updateChildren(data);
+                                test = ((JSONObject) j.get("levels")).getJSONArray("data");
+                                if (test.length() <= 1)
+                                    flag = false;
                             } catch (Exception e) {
-                                if (Globe.DEBUG) Log.d(TAG, "One date segment had an error!");
+                                if (Globe.DEBUG) Log.d(TAG, "Something went wrong while reading levels-data array");
+                                flag = false;
+                            }
+                            if (flag) {
+                                try {
+                                    idx = j.keys();
+                                    while (idx.hasNext()) {
+                                        s = idx.next();
+                                        if (!s.equals("levels")) // skip the levels object
+                                            data.put(s, j.get(s));
+                                    }
+                                    Globe.dbRef.child(Globe.user.getUid()).child("_sleep").child(j.get("dateOfSleep").toString()).updateChildren(data);
+                                } catch (Exception e) {
+                                    if (Globe.DEBUG) Log.d(TAG, "One date segment had an error!");
+                                }
                             }
                             data.clear();
                         }
@@ -331,10 +347,23 @@ class Globe {
             Tasks.await(t1);
             Tasks.await(t2);
 
+            Handler h = new Handler(ctx.getMainLooper());
             if (t1.getResult() && t2.getResult()) {
-                Toast.makeText(ctx, "Successfully captured FitBit data.", Toast.LENGTH_SHORT).show();
+                if (Globe.DEBUG) Log.d(TAG, "Success!!");
+                h.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(ctx, "Successfully captured FitBit data.", Toast.LENGTH_LONG).show();
+                    }
+                });
             } else {
-                Toast.makeText(ctx, "Something went wrong in capturing FitBit data.", Toast.LENGTH_SHORT).show();
+                if (Globe.DEBUG) Log.d(TAG, "Fail!!");
+                h.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(ctx, "Something went wrong in capturing FitBit data.", Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         } catch (InterruptedException e) {
             e.printStackTrace();

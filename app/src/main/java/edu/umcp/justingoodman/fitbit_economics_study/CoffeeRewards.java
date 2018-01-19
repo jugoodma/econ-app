@@ -252,6 +252,7 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
     // decides if the user gets the coupon
     private void coupon() {
         final double time = c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f); // current time
+        Runnable r;
 
         // reward is given IF:
         // group 0 (control) need not press the 'in-bed' button before their bedtime
@@ -270,29 +271,29 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
             }
             if (button <= start + 0.5 && g1check) { // 'in-bed' button time must be within 30 minutes of falling asleep
                 // display coupon
-                dialogue.setBackgroundColor(Color.GREEN);
-                dialogue.setText(String.format(getResources().getString(R.string.valid), new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Calendar.getInstance().getTime())));
                 // display cancel/redeem buttons for Barista
-                runOnUiThread(new Runnable() {
+                r = new Runnable() {
                     @Override
                     public void run() {
+                        dialogue.setBackgroundColor(Color.GREEN);
+                        dialogue.setText(String.format(getResources().getString(R.string.valid), new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Calendar.getInstance().getTime())));
                         cancel.setVisibility(View.VISIBLE);
                         redeem.setVisibility(View.VISIBLE);
                     }
-                });
+                };
             } else {
                 // no display coupon
-                runOnUiThread(new Runnable() {
+                r = new Runnable() {
                     @Override
                     public void run() {
                         dialogue.setBackgroundColor(Color.RED);
                         dialogue.setText(getResources().getString(R.string.invalidCoffee));
                     }
-                });
+                };
             }
         } else {
             // display a message
-            runOnUiThread(new Runnable() {
+            r = new Runnable() {
                 @Override
                 public void run() {
                     dialogue.setBackgroundColor(Color.GRAY);
@@ -303,9 +304,10 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
                     else
                         dialogue.setText(getResources().getString(R.string.noBedButton));
                 }
-            });
+            };
         }
 
+        runOnUiThread(r);
         runOnUiThread(new Runnable() {
             @Override
             public void run() {

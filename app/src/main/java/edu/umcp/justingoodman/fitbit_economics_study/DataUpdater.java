@@ -31,7 +31,10 @@ public class DataUpdater extends BroadcastReceiver {
     private static final String TAG = "DataUpdater";
 
     @Override
-    public void onReceive(final Context ctx, Intent i) {
+    public void onReceive(Context context, Intent i) {
+        final Context ctx = context.getApplicationContext();
+        if (Globe.DEBUG) Log.d(TAG, context.toString());
+        if (Globe.DEBUG) Log.d(TAG, ctx.toString());
         if ("android.intent.action.BOOT_COMPLETED".equals(i.getAction()) || "android.intent.action.QUICKBOOT_POWERON".equals(i.getAction())) {
             // device rebooted, reset the alarms (just start the app after a minute - change this later)
             new Handler().postDelayed(new Runnable() {
@@ -47,7 +50,6 @@ public class DataUpdater extends BroadcastReceiver {
             if (type == 0) DataUpdater.collectFitbitData(ctx);
             if (type == 1) DataUpdater.sendNotification(ctx, i);
             // if (type == 2) DataUpdater.airplaneModeOff(ctx);
-            if (type == 3) Home.updateButtons();
 
             // I might move all of the functions to Globe.. we'll see
         }

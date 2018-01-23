@@ -73,16 +73,39 @@
         tools:layout_constraintRight_creator="1"
         tools:layout_constraintTop_creator="1" />
 
+    <EditText
+        android:id="@+id/code_new"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hapticFeedbackEnabled="true"
+        android:hint="@string/code"
+        android:inputType="textNoSuggestions"
+        android:textColor="@color/colorAccent"
+        android:textColorHint="@color/colorAccent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintLeft_toLeftOf="@+id/reenter_new"
+        app:layout_constraintRight_toRightOf="@+id/reenter_new"
+        app:layout_constraintTop_toBottomOf="@+id/reenter_new"
+        tools:layout_constraintLeft_creator="1"
+        tools:layout_constraintRight_creator="1"
+        tools:layout_constraintTop_creator="1" />
+
     <Button
         android:id="@+id/submit"
         android:layout_width="0dp"
         android:layout_height="48dp"
-        android:layout_marginRight="16dp"
-        android:layout_marginTop="64dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="8dp"
         android:background="@android:color/holo_orange_dark"
         android:text="@string/submit"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/reenter_new"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/progressbar"
+        app:layout_constraintTop_toTopOf="parent"
         tools:layout_constraintRight_creator="1"
-        tools:layout_constraintTop_creator="1" android:layout_marginEnd="16dp"/>
+        tools:layout_constraintTop_creator="1" />
+
 </android.support.constraint.ConstraintLayout>

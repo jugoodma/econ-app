@@ -26,9 +26,12 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "NewUser";
 
+    private static final String CODE = "pittecon";
+
     private EditText email;
     private EditText password;
     private EditText reenter;
+    private EditText code;
     private ProgressBar p;
 
     @Override
@@ -41,6 +44,7 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
         email = findViewById(R.id.email_new);
         password = findViewById(R.id.password_new);
         reenter = findViewById(R.id.reenter_new);
+        code = findViewById(R.id.code_new);
         p = findViewById(R.id.progressbar);
         p.setIndeterminate(true);
         p.setVisibility(View.GONE);
@@ -114,6 +118,17 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
             valid = false;
         } else {
             reenter.setError(null);
+        }
+
+        String cd = code.getText().toString();
+        if (TextUtils.isEmpty(cd)) {
+            code.setError(req);
+            valid = false;
+        } else if (!TextUtils.equals(CODE, cd)) {
+            code.setError("Invalid participant code.");
+            valid = false;
+        } else {
+            code.setError(null);
         }
 
         return valid;

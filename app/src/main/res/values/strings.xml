@@ -19,6 +19,7 @@
 
     <!-- NewUser -->
     <string name="reenter">re-enter password</string>
+    <string name="code">enter participant code</string>
     <string name="submit">submit</string>
 
     <!-- InBed -->

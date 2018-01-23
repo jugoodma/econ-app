@@ -61,7 +61,6 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         setContentView(R.layout.activity_home);
 
         if (Globe.DEBUG) Log.d(TAG, "Creating....");
-        if (Globe.DEBUG) Log.d(TAG, Home.this.getApplicationContext().toString());
         if (Globe.DEBUG) Log.d(TAG, Globe.refresh_token);
 
         bedButton = findViewById(R.id.inbed_home);
@@ -186,33 +185,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 Globe.group = group;
 
                 // Setup delay for 'in-bed' button (simplify the math later)
-                h.removeCallbacks(r);
-                Calendar c = Calendar.getInstance();
-                c.setTimeInMillis(System.currentTimeMillis());
-                double time = c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f);
-                double disabled = Globe.bedTime + 5; // right bound
-                if (disabled > 24)
-                    disabled -= 24f;
-                double enabled = disabled - 8; // left bound
-                if (enabled < 0) {
-                    enabled += 24f;
-                    disabled += 24f;
-                }
-                if (Globe.DEBUG) Log.d(TAG, "Handler times: " + enabled + " - " + time + " - " + disabled);
-                long delay = 2000;
-                if (time <= enabled || time > disabled)
-                    delay += (
-                             (((((int) enabled) * 60) + (((int) ((enabled % 1) * 60))))) -
-                             (((((int) time) * 60) + (((int) ((time % 1) * 60)))))
-                             ) * 60 * 1000;
-                else
-                    delay += (
-                             (((((int) disabled) * 60) + (((int) ((disabled % 1) * 60))))) -
-                             (((((int) time) * 60) + (((int) ((time % 1) * 60)))))
-                             ) * 60 * 1000;
-
-                h.postDelayed(r, delay);
-                if (Globe.DEBUG) Log.d(TAG, "Handler postdelay time is at " + new Date(c.getTimeInMillis() + delay).toString() + ", delay is " + delay);
+                scheduleHandler();
 
                 // update
                 updateButtons();
@@ -401,5 +374,36 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 }
             }
         });
+        scheduleHandler(); // reset for next time
+    }
+
+    private void scheduleHandler() {
+        h.removeCallbacks(r);
+        Calendar c = Calendar.getInstance();
+        c.setTimeInMillis(System.currentTimeMillis());
+        double time = c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f);
+        double disabled = Globe.bedTime + 5; // right bound
+        if (disabled > 24)
+            disabled -= 24f;
+        double enabled = disabled - 8; // left bound
+        if (enabled < 0) {
+            enabled += 24f;
+            disabled += 24f;
+        }
+        if (Globe.DEBUG) Log.d(TAG, "Handler times: " + enabled + " - " + time + " - " + disabled);
+        long delay = 2000;
+        if (time <= enabled || time > disabled)
+            delay += (
+                    (((((int) enabled) * 60) + (((int) ((enabled % 1) * 60))))) -
+                            (((((int) time) * 60) + (((int) ((time % 1) * 60)))))
+            ) * 60 * 1000;
+        else
+            delay += (
+                    (((((int) disabled) * 60) + (((int) ((disabled % 1) * 60))))) -
+                            (((((int) time) * 60) + (((int) ((time % 1) * 60)))))
+            ) * 60 * 1000;
+
+        h.postDelayed(r, delay);
+        if (Globe.DEBUG) Log.d(TAG, "Handler postdelay time is at " + new Date(c.getTimeInMillis() + delay).toString() + ", delay is " + delay);
     }
 }

@@ -13,6 +13,7 @@
     <string name="out">Sign Out</string>
     <string name="welcome">Welcome Participant: %1$s</string>
     <string name="yourGoal">Your goal bedtime is %1$s</string>
+    <string name="yourWake">Your coffee redemption time is %1$s</string>
     <string name="rewards">Coffee Rewards</string>
     <string name="bed">I\'m in Bed!</string>
     <string name="login_fitbit">Login to FitBit</string>
@@ -29,14 +30,17 @@
     <string name="inBed">I\'m in bed - earn my FREE coffee!</string>
 
     <!-- CoffeeRewards -->
-    <string name="redeemTime">Coupon must be redeemed by: %1$s</string>
+    <string name="coupon">Coffee Coupon</string>
+    <string name="coupon_desc">Cup of Coffee</string>
+    <string name="einstein_desc">Einstein Bro\'s Bagels and Coffee</string>
+    <string name="redeemTime">Expires %1$s at %2$s</string>
     <string name="redeem">Redeem Your FREE Coffee!</string>
-    <string name="cancelButton">Cancel</string>
-    <string name="redeemButton">Redeem</string>
-    <string name="valid">%1$s\nHave the Barista press \'Redeem\' when you are ready to redeem your free coffee!</string>
+    <string name="cancel">Cancel</string>
+    <string name="valid">%1$s\nShow the cashier your phone and have them press the button below to redeem your free cup of coffee. Can only be used once.</string>
     <string name="invalidCoffee">Sorry, you didn\'t reach your goal bedtime!</string>
     <string name="syncFitbit">You need to sync your Fitbit!</string>
     <string name="noBedButton">You did not press the \"in bed\" button!</string>
     <string name="pastCoupon">It\'s past your redeem time!</string>
-    <string name="thanks">Thanks! Enjoy your free coffee!</string>
+    <string name="thanks">Enjoy your coffee!</string>
+    <string name="expired">Expired</string>
 </resources>

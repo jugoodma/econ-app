@@ -35,8 +35,8 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
     private static final String TAG = "CoffeeRewards";
 
     private TextView dialogue;
-    private Button mainRedeem;
-    private Button cancel;
+    private TextView expire;
+    //private Button cancel;
     private Button redeem;
     private ProgressBar p;
 
@@ -55,32 +55,20 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
 
         // Set the views
         dialogue = findViewById(R.id.text_coffee);
-        mainRedeem = findViewById(R.id.button_coffee);
-        cancel = findViewById(R.id.cancel_coffee);
+        expire = findViewById(R.id.time_coffee);
+        //cancel = findViewById(R.id.cancel_coffee);
         redeem = findViewById(R.id.redeem_coffee);
         p = findViewById(R.id.progressbar);
         p.setIndeterminate(true);
-        p.setVisibility(View.GONE);
+        redeem.setClickable(false);
+        redeem.setBackgroundColor(getResources().getColor(R.color.grayOut));
+        expire.setText(String.format(getResources().getString(R.string.redeemTime), "--", "--:--"));
 
         vel = Globe.dbRef.child(Globe.user.getUid()).child("waketime").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                Double waketime = 8.0;
-                try {
-                    Double d = (Double) dataSnapshot.getValue();
-                    if (d != null)
-                        waketime = d;
-                } catch (Exception e) {
-                    try {
-                        Long l = (Long) dataSnapshot.getValue();
-                        if (l != null)
-                            waketime = l + 0.0;
-                    } catch (Exception f) {
-                        f.printStackTrace();
-                    }
-                }
-                Globe.wakeTime = waketime;
-                ((TextView) findViewById(R.id.time_coffee)).setText(String.format(getResources().getString(R.string.redeemTime), Globe.timeToString(Globe.wakeTime)));
+                Globe.wakeTime = Globe.parseDouble(dataSnapshot.getValue(), 9.0);
+                expire.setText(String.format(getResources().getString(R.string.redeemTime), new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().getTime()), Globe.timeToString(Globe.wakeTime)));
             }
 
             @Override
@@ -90,9 +78,17 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
             }
         });
 
-        mainRedeem.setOnClickListener(CoffeeRewards.this);
-        cancel.setOnClickListener(CoffeeRewards.this);
+        findViewById(R.id.cancel_coffee).setOnClickListener(CoffeeRewards.this);
         redeem.setOnClickListener(CoffeeRewards.this);
+
+        p.setVisibility(View.VISIBLE); // waiting
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                threader();
+            }
+        });
+        thread.start();
 
         if (Globe.DEBUG) Log.d(TAG, "Created.");
     }
@@ -107,46 +103,30 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
     @Override
     public void onClick(View v) {
         int i = v.getId();
-        if (i == R.id.button_coffee) {
-            p.setVisibility(View.VISIBLE); // waiting
-            mainRedeem.setClickable(false);
-            mainRedeem.setBackgroundColor(getResources().getColor(R.color.grayOut));
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    threader();
-                }
-            });
-            thread.start();
-        } else if (i == R.id.redeem_coffee) {
+        if (i == R.id.redeem_coffee) {
             // signal a redemption in the db and check that the current time is still behind the wake-time (5min leeway)
             // if we got here, then button and start floats are still valid times
             if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) <= Globe.wakeTime + (5 / 60f)) {
                 dialogue.setText(getResources().getString(R.string.thanks));
-                cancel.setVisibility(View.GONE);
-                redeem.setVisibility(View.GONE);
+                // We want to track the redemption time
                 Globe.dbRef.child(Globe.user.getUid()).child("_coffee").child(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Calendar.getInstance().getTime())).setValue(1);
-                // This allows the user to only use the coupon once!
-                try {
-                    Globe.writeData(CoffeeRewards.this, new JSONObject().put("hitForDate", "-"));
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-                button = -1f; // this doesn't matter too much
             } else {
-                cancel.setVisibility(View.GONE);
-                redeem.setVisibility(View.GONE);
                 dialogue.setText(getResources().getString(R.string.pastCoupon));
-                dialogue.setBackgroundColor(Color.RED);
+                dialogue.setBackgroundColor(getResources().getColor(R.color.red));
+                Globe.dbRef.child(Globe.user.getUid()).child("_coffee").child(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Calendar.getInstance().getTime())).setValue(0);
             }
+            redeem.setClickable(false);
+            redeem.setBackgroundColor(getResources().getColor(R.color.grayOut));
+            expire.setText(getResources().getString(R.string.expired));
+            // This allows the user to only use the coupon once!
+            try {
+                Globe.writeData(CoffeeRewards.this, new JSONObject().put("hitForDate", "-"));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            button = -1f; // this doesn't matter too much
         } else if (i == R.id.cancel_coffee) {
-            // stop displaying the coupon stuff
-            cancel.setVisibility(View.GONE);
-            redeem.setVisibility(View.GONE);
-            dialogue.setText("");
-            dialogue.setBackgroundColor(Color.TRANSPARENT);
-            mainRedeem.setClickable(true);
-            mainRedeem.setBackgroundColor(getResources().getColor(R.color.orange));
+            onBackPressed();
         }
     }
 
@@ -275,10 +255,10 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
                 r = new Runnable() {
                     @Override
                     public void run() {
-                        dialogue.setBackgroundColor(Color.GREEN);
+                        redeem.setClickable(true);
+                        redeem.setBackgroundColor(getResources().getColor(R.color.orange));
+                        dialogue.setBackgroundColor(getResources().getColor(R.color.green));
                         dialogue.setText(String.format(getResources().getString(R.string.valid), new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Calendar.getInstance().getTime())));
-                        cancel.setVisibility(View.VISIBLE);
-                        redeem.setVisibility(View.VISIBLE);
                     }
                 };
             } else {
@@ -286,8 +266,11 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
                 r = new Runnable() {
                     @Override
                     public void run() {
-                        dialogue.setBackgroundColor(Color.RED);
+                        redeem.setClickable(false);
+                        redeem.setBackgroundColor(getResources().getColor(R.color.grayOut));
+                        dialogue.setBackgroundColor(getResources().getColor(R.color.red));
                         dialogue.setText(getResources().getString(R.string.invalidCoffee));
+                        expire.setText(getResources().getString(R.string.expired));
                     }
                 };
             }
@@ -296,6 +279,8 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
             r = new Runnable() {
                 @Override
                 public void run() {
+                    redeem.setClickable(false);
+                    redeem.setBackgroundColor(getResources().getColor(R.color.grayOut));
                     dialogue.setBackgroundColor(Color.GRAY);
                     if (time >= Globe.wakeTime)
                         dialogue.setText(getResources().getString(R.string.pastCoupon));
@@ -303,6 +288,7 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
                         dialogue.setText(getResources().getString(R.string.syncFitbit));
                     else
                         dialogue.setText(getResources().getString(R.string.noBedButton));
+                    expire.setText(getResources().getString(R.string.expired));
                 }
             };
         }

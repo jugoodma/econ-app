@@ -10,13 +10,6 @@ import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.FirebaseDatabase;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 // import android.os.Build;
 // import android.provider.Settings;
 
@@ -36,8 +29,8 @@ public class DataUpdater extends BroadcastReceiver {
         if (Globe.DEBUG) Log.d(TAG, "Type is " + type);
 
         if (type == 0) DataUpdater.collectFitbitData(ctx);
-        if (type == 1) DataUpdater.sendNotification(ctx, i);
-        // if (type == 2) DataUpdater.airplaneModeOff(ctx);
+        if (type == 1) DataUpdater.bedtimeNotification(ctx);
+        if (type == 2) DataUpdater.waketimeNotification(ctx);
 
         // I might move all of the functions to Globe.. we'll see
     }
@@ -47,19 +40,7 @@ public class DataUpdater extends BroadcastReceiver {
         NetworkManager.getInstance(ctx);
 
         // Set some globals
-        FirebaseApp.initializeApp(ctx); // this must be called here because we are outside the main process (this is called automatically INSIDE the main process)
-        Globe.auth = FirebaseAuth.getInstance();
-        Globe.user = Globe.auth.getCurrentUser();
-        Globe.db = FirebaseDatabase.getInstance();
-        Globe.dbRef = Globe.db.getReference();
-        try {
-            JSONObject data = Globe.readData(ctx);
-            Globe.access_token = data.get("access_token").toString();
-            Globe.refresh_token = data.get("refresh_token").toString();
-            Globe.token_type = data.get("token_type").toString();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        Globe.init(ctx);
 
         // Refresh token & update data
         // refreshToken will block until we succeed or fail
@@ -78,21 +59,49 @@ public class DataUpdater extends BroadcastReceiver {
         thread.start();
     }
 
-    private static void sendNotification(Context ctx, Intent i) {
-        if (Globe.DEBUG) Log.d(TAG, "Notification service started.");
+    private static void bedtimeNotification(Context ctx) {
+        if (Globe.DEBUG) Log.d(TAG, "Bedtime notification service started.");
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm != null) {
-            PendingIntent pi = PendingIntent.getActivity(ctx, 2, i, 0);
+            PendingIntent pi = PendingIntent.getActivity(ctx, 3, new Intent(ctx, Launcher.class), 0);
 
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, "Economics");
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
 
-            builder.setTicker("Bedtime Soon!");
-            builder.setContentTitle("Bedtime Soon!");
-            builder.setContentText("Looks like it's almost your bedtime! Maybe start getting ready for bed soon?");
-            builder.setSmallIcon(R.mipmap.ic_launcher);
-            builder.setContentIntent(pi);
+            b.setTicker("Bedtime Soon!");
+            b.setContentTitle("Bedtime Soon!");
+            b.setContentText("Looks like it's almost your bedtime! Start getting ready for bed soon!");
+            b.setSmallIcon(R.mipmap.ic_launcher);
+            b.setContentIntent(pi);
+            // big style
+            b.setStyle(new NotificationCompat.BigTextStyle().bigText("Looks like it's almost your bedtime! Start getting ready for bed soon!"));
 
-            Notification n = builder.build();
+            Notification n = b.build();
+
+            // create the notification
+            // n.vibrate = new long[]{150, 300, 150, 400};
+            n.flags = Notification.FLAG_AUTO_CANCEL;
+            nm.notify(R.mipmap.ic_launcher, n);
+        }
+    }
+
+    private static void waketimeNotification(Context ctx) {
+        if (Globe.DEBUG) Log.d(TAG, "Waketime notification service started.");
+        NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        // later - set actual redemption time, and do a *quick* check of validity
+        if (nm != null) {
+            PendingIntent pi = PendingIntent.getActivity(ctx, 4, new Intent(ctx, Launcher.class), 0);
+
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
+
+            b.setTicker("Coffee Coupon");
+            b.setContentTitle("Coffee Coupon");
+            b.setContentText("Looks like you might have earned a free coffee! Be sure to redeem your coupon before it expires!");
+            b.setSmallIcon(R.mipmap.ic_launcher);
+            b.setContentIntent(pi);
+            // big style
+            b.setStyle(new NotificationCompat.BigTextStyle().bigText("Looks like you might have earned a free coffee! Be sure to redeem your coupon before it expires!"));
+
+            Notification n = b.build();
 
             // create the notification
             // n.vibrate = new long[]{150, 300, 150, 400};

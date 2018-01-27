@@ -1,15 +1,13 @@
 package edu.umcp.justingoodman.fitbit_economics_study;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Handler;
-import android.os.SystemClock;
 import android.util.Log;
 
-import static android.content.Context.ALARM_SERVICE;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
 
 /* BootUpdater
  *
@@ -23,20 +21,44 @@ public class BootUpdater extends BroadcastReceiver {
     @Override
     public void onReceive(final Context ctx, Intent i) {
         if (Globe.DEBUG) Log.d(TAG, "Booted!");
+        Globe.init(ctx);
+        // I dislike this nested style, but it's easier to code compared to setting up threads/tasks with waits
         if ("android.intent.action.BOOT_COMPLETED".equals(i.getAction()) || "android.intent.action.QUICKBOOT_POWERON".equals(i.getAction())) {
-            new Handler().postDelayed(new Runnable() {
+            // start with getting the stage
+            Globe.dbRef.child("_stage").addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
-                public void run() {
-                    AlarmManager am = (AlarmManager) ctx.getSystemService(ALARM_SERVICE);
-                    if (am != null) {
-                        Intent iFB = new Intent(ctx, DataUpdater.class);
-                        iFB.putExtra("type", 0); // 0 = FitBit updater
-                        PendingIntent senderFB = PendingIntent.getBroadcast(ctx, 0, iFB, 0);
-                        // start now, 1 hour interval
-                        am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime(), AlarmManager.INTERVAL_HOUR, senderFB);
-                    }
+                public void onDataChange(DataSnapshot d) {
+                    // need Globe.stage
+                    Globe.stage = Globe.parseLong(d.getValue()); // default 0
+
+                    // now set the other variables
+                    Globe.dbRef.child(Globe.user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot d) {
+                            // set globals
+                            Globe.bedTime = Globe.parseDouble(d.child("bedtime"), 22.0);
+                            Globe.notification = Globe.parseDouble(d.child("notification"), 1.0);
+                            Globe.wakeTime = Globe.parseDouble(d.child("waketime"), 9.0);
+
+                            // now set the alarms
+                            Globe.scheduleAlarm(ctx, 0);
+                            Globe.scheduleAlarm(ctx, 1);
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError e) {
+                            // Failed to read value
+                            if (Globe.DEBUG) Log.d(TAG, "Failed to read value.", e.toException());
+                        }
+                    });
                 }
-            }, 60 * 1000);
+
+                @Override
+                public void onCancelled(DatabaseError e) {
+                    // Failed to read value
+                    if (Globe.DEBUG) Log.d(TAG, "Failed to read value.", e.toException());
+                }
+            });
         }
     }
 }

@@ -39,6 +39,7 @@ if (propFile.canRead()) {
         android.signingConfigs.config.storePassword = props['STORE_PASSWORD']
         android.signingConfigs.config.keyAlias = props['KEY_ALIAS']
         android.signingConfigs.config.keyPassword = props['KEY_PASSWORD']
+        // project.logger.lifecycle('signing config worked')
     } else {
         android.buildTypes.release.signingConfig = null
     }

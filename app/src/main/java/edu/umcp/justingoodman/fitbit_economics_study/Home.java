@@ -1,11 +1,9 @@
 package edu.umcp.justingoodman.fitbit_economics_study;
 
 import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -35,8 +33,8 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "Home";
 
-    private Handler h = new Handler();
-    private Runnable r = new Runnable() {
+    private final Handler h = new Handler();
+    private final Runnable r = new Runnable() {
         @Override
         public void run() {
             if (Globe.DEBUG) Log.d(TAG, "Handler called/ran");
@@ -44,12 +42,8 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         }
     };
 
-    private ValueEventListener vUser;
     private ValueEventListener vStage;
-    // private ValueEventListener vWake;
-    private PendingIntent senderFB; // for FitBit service
-    private PendingIntent senderNS; // for Notification service
-    private AlarmManager am;
+    private ValueEventListener vUser;
     private boolean calcBed = false;
     private boolean updater = true;
     private Button bedButton;
@@ -70,28 +64,21 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         p.setVisibility(View.VISIBLE);
         p.bringToFront();
 
-        am = (AlarmManager) Home.this.getSystemService(ALARM_SERVICE);
+        Globe.am = (AlarmManager) Home.this.getSystemService(ALARM_SERVICE);
+
         final TaskCompletionSource<Boolean> tcs = new TaskCompletionSource<>();
         final Task<Boolean> t = tcs.getTask();
 
         ((TextView) findViewById(R.id.welcome_home)).setText(String.format(getResources().getString(R.string.welcome), "--"));
         ((TextView) findViewById(R.id.goaltime_home)).setText(String.format(getResources().getString(R.string.yourGoal), "--:--"));
+        ((TextView) findViewById(R.id.waketime_home)).setText(String.format(getResources().getString(R.string.yourWake), "--:--"));
 
         // Setup database listener for stage change
         vStage = Globe.dbRef.child("_stage").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 // variable from database
-                long stage = 0L;
-                // stage (0 = passive, 1 = active, 2 = ?)
-                try {
-                    Long l = (Long) dataSnapshot.getValue(); // 0 or 1 ?or 2?
-                    if (l != null)
-                        stage = l;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                Globe.stage = stage;
+                Globe.stage = Globe.parseLong(dataSnapshot.getValue()); // default 0
                 if (Globe.stage == 0)
                     Globe.dbRef.child(Globe.user.getUid()).child("bedtime").setValue("x"); // set bedtime back to 'x'
                 update();
@@ -121,68 +108,10 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 }
 
                 // variables from database
-                double bedtime = 22.0;
-                double notification = 1.0;
-                double waketime = 8.0;
-                long group = 0L;
-                // bedtime (will be 'x' if we are in stage 0)
-                if (!"x".equals(dataSnapshot.child("bedtime").getValue())) {
-                    try {
-                        Double d = (Double) dataSnapshot.child("bedtime").getValue();
-                        if (d != null)
-                            bedtime = d;
-                    } catch (Exception e) {
-                        try {
-                            Long l = (Long) dataSnapshot.child("bedtime").getValue();
-                            if (l != null)
-                                bedtime = l + 0.0;
-                        } catch (Exception f) {
-                            f.printStackTrace();
-                        }
-                    }
-                } else {
-                    calcBed = true;
-                }
-                // notification
-                try {
-                    Double d = (Double) dataSnapshot.child("notification").getValue();
-                    if (d != null)
-                        notification = d;
-                } catch (Exception e) {
-                    try {
-                        Long l = (Long) dataSnapshot.child("notification").getValue();
-                        if (l != null)
-                            notification = l + 0.0;
-                    } catch (Exception f) {
-                        f.printStackTrace();
-                    }
-                }
-                // waketime
-                try {
-                    Double d = (Double) dataSnapshot.child("waketime").getValue();
-                    if (d != null)
-                        waketime = d;
-                } catch (Exception e) {
-                    try {
-                        Long l = (Long) dataSnapshot.child("waketime").getValue();
-                        if (l != null)
-                            waketime = l + 0.0;
-                    } catch (Exception f) {
-                        f.printStackTrace();
-                    }
-                }
-                // group
-                try {
-                    Long l = (Long) dataSnapshot.child("group").getValue(); // 0 or 1
-                    if (l != null)
-                        group = l;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                Globe.bedTime = bedtime;
-                Globe.notification = notification;
-                Globe.wakeTime = waketime;
-                Globe.group = group;
+                Globe.bedTime = Globe.parseDouble(dataSnapshot.child("bedtime").getValue(), 22.0);
+                Globe.notification = Globe.parseDouble(dataSnapshot.child("notification").getValue(), 1.0);
+                Globe.wakeTime = Globe.parseDouble(dataSnapshot.child("waketime").getValue(), 9.0);
+                Globe.group = Globe.parseLong(dataSnapshot.child("group").getValue()); // default 0
 
                 // Setup delay for 'in-bed' button (simplify the math later)
                 scheduleHandler();
@@ -217,13 +146,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                     Tasks.await(t); // don't block on main thread!
                     if (Globe.DEBUG) Log.d(TAG, "Task complete - Scheduling alarm for DataUpdater");
                     // Sechedule alarm to update FitBit data
-                    if (am != null) {
-                        Intent iFB = new Intent(Home.this, DataUpdater.class);
-                        iFB.putExtra("type", 0); // 0 = FitBit updater
-                        senderFB = PendingIntent.getBroadcast(Home.this,0, iFB, 0);
-                        // start now, 1 hour interval
-                        am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime(), AlarmManager.INTERVAL_HOUR, senderFB);
-                    }
+                    Globe.scheduleAlarm(Home.this, 0);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
@@ -250,20 +173,13 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-    }
+    public void onPause() { super.onPause(); }
 
     @Override
-    public void onBackPressed() {
-        // super.onBackPressed();
-        finish();
-    }
+    public void onBackPressed() { finish(); }
 
     @Override
-    public void onStop() {
-        super.onStop();
-    }
+    public void onStop() { super.onStop(); }
 
     @Override
     public void onClick(View v) {
@@ -286,6 +202,9 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             findViewById(R.id.rewards_home).setVisibility(View.GONE);
             findViewById(R.id.inbed_home).setVisibility(View.GONE);
             findViewById(R.id.goaltime_home).setVisibility(View.GONE);
+            // we don't want a bedtime notification if stage is passive
+            if (Globe.am != null && Globe.senderNS != null) { Globe.am.cancel(Globe.senderNS); }
+            if (Globe.am != null && Globe.senderRD != null) { Globe.am.cancel(Globe.senderRD); }
         } else if (Globe.stage == 1) {
             // Make these seen if stage is active
             findViewById(R.id.rewards_home).setVisibility(View.VISIBLE);
@@ -300,28 +219,11 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             ((TextView) findViewById(R.id.goaltime_home)).setText(String.format(getResources().getString(R.string.yourGoal), Globe.timeToString(Globe.bedTime)));
 
             // Display waketime
+            ((TextView) findViewById(R.id.waketime_home)).setText(String.format(getResources().getString(R.string.yourWake), Globe.timeToString(Globe.wakeTime)));
 
-
-            // Schedule alarm for bedtime notification
-            if (am != null) {
-                Intent iNS = new Intent(Home.this, DataUpdater.class);
-                iNS.putExtra("type", 1); // 1 = notification
-                senderNS = PendingIntent.getBroadcast(Home.this, 1, iNS, 0);
-                // calculate bedtime notification
-                double bedtime = Globe.bedTime;
-                bedtime -= Globe.notification; // subtract notification hours
-                if (bedtime < 0)
-                    bedtime += 24f;
-                // setup time for alarm to go off
-                Calendar c = Calendar.getInstance(); // current time
-                c.setTimeInMillis(System.currentTimeMillis());
-                if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) >= bedtime) // make sure we haven't passed the current bedtime
-                    c.add(Calendar.DATE, 1); // add one day, because we passed the notification time
-                c.set(Calendar.HOUR_OF_DAY, (int) bedtime);
-                c.set(Calendar.MINUTE, (int) ((bedtime % 1) * 60));
-                // start at bedtime notification time, 1 day interval (does not need to be exact)
-                am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_DAY, senderNS);
-            }
+            // Schedule alarms for bedtime/waketime notifications
+            Globe.scheduleAlarm(Home.this, 1);
+            Globe.scheduleAlarm(Home.this, 2);
         } // else ?
     }
 
@@ -331,11 +233,11 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         Globe.auth.signOut();
         Globe.dbRef.child(Globe.user.getUid()).removeEventListener(vUser);
         Globe.dbRef.child("_stage").removeEventListener(vStage);
-        if (am != null) { // this crashes if user is not loaded
-            if (senderFB != null)
-                am.cancel(senderFB);
-            if (senderNS != null)
-                am.cancel(senderNS);
+        if (Globe.am != null) { // this crashes if user is not loaded
+            if (Globe.senderFB != null)
+                Globe.am.cancel(Globe.senderFB);
+            if (Globe.senderNS != null)
+                Globe.am.cancel(Globe.senderNS);
         }
         // delete current FitBit login data (+ other cached data)
         // the average user won't logout of their device and log into someone else's
@@ -344,7 +246,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         finish();
     }
 
-    void updateButtons() {
+    private void updateButtons() {
         // reset handler too? *****
         // 'in-bed' button becomes available 3hrs before bedtime
         // button is disabled 5hrs after bedtime
@@ -354,7 +256,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         if (disabled > 24)
             disabled -= 24f;
         double enabled = disabled - 8; // left bound
-        if (enabled < 0) {
+        if (enabled < 0 && time > 12) { // Needs testing! CASE: ENABLED = -2.79, DISABLED  = 5.20, time = 0.4
             time -= 24f;
         }
         if (Globe.DEBUG) Log.d(TAG, "times: " + enabled + " - " + time + " - " + disabled);
@@ -389,19 +291,14 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         if (enabled < 0) {
             enabled += 24f;
             disabled += 24f;
+            time += 12f; // maybe?
         }
         if (Globe.DEBUG) Log.d(TAG, "Handler times: " + enabled + " - " + time + " - " + disabled);
         long delay = 2000;
-        if (time <= enabled || time > disabled)
-            delay += (
-                    (((((int) enabled) * 60) + (((int) ((enabled % 1) * 60))))) -
-                            (((((int) time) * 60) + (((int) ((time % 1) * 60)))))
-            ) * 60 * 1000;
+        if (time <= enabled || time > disabled) // THIS NEEDS A FIX, CASE: time = 0.4, enabled = 21.2, disabled = 29.2
+            delay += (  (((((int) enabled) * 60) + (((int) ((enabled % 1) * 60))))) - (((((int) time) * 60) + (((int) ((time % 1) * 60)))))  ) * 60 * 1000;
         else
-            delay += (
-                    (((((int) disabled) * 60) + (((int) ((disabled % 1) * 60))))) -
-                            (((((int) time) * 60) + (((int) ((time % 1) * 60)))))
-            ) * 60 * 1000;
+            delay += (  (((((int) disabled) * 60) + (((int) ((disabled % 1) * 60))))) - (((((int) time) * 60) + (((int) ((time % 1) * 60)))))  ) * 60 * 1000;
 
         h.postDelayed(r, delay);
         if (Globe.DEBUG) Log.d(TAG, "Handler postdelay time is at " + new Date(c.getTimeInMillis() + delay).toString() + ", delay is " + delay);

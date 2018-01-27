@@ -1,8 +1,12 @@
 package edu.umcp.justingoodman.fitbit_economics_study;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.support.customtabs.CustomTabsIntent;
 import android.util.Base64;
 import android.util.Log;
@@ -12,6 +16,7 @@ import com.android.volley.Request;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -37,6 +42,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 
+import static android.content.Context.ALARM_SERVICE;
+
 /* Globe
  *
  * The global environment
@@ -47,7 +54,7 @@ import java.util.concurrent.ExecutionException;
 class Globe {
 
     /** variables */
-    private static final String TAG = "GLOBAL CALL";
+    private static final String TAG = "Globe";
 
     private static final String FILENAME = "scr_data";
     static final String client_id = "228Q8G";
@@ -67,10 +74,67 @@ class Globe {
     static FirebaseUser user;
     static FirebaseDatabase db;
     static DatabaseReference dbRef;
+    static AlarmManager am;
+    static PendingIntent senderFB; // for FitBit service
+    static PendingIntent senderNS; // for bedtime notification service
+    static PendingIntent senderRD; // for wakeup redeem notification
 
     public static final boolean DEBUG = false; // set to false in production
 
     /** functions */
+    static void init(Context ctx) {
+        // Set some globals
+        FirebaseApp.initializeApp(ctx); // this must be called here because we are outside the main process (this is called automatically INSIDE the main process)
+        Globe.auth = FirebaseAuth.getInstance();
+        Globe.user = Globe.auth.getCurrentUser();
+        Globe.db = FirebaseDatabase.getInstance();
+        Globe.dbRef = Globe.db.getReference();
+        try {
+            JSONObject data = Globe.readData(ctx);
+            Globe.access_token = data.get("access_token").toString();
+            Globe.refresh_token = data.get("refresh_token").toString();
+            Globe.token_type = data.get("token_type").toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        Globe.am = (AlarmManager) ctx.getSystemService(ALARM_SERVICE);
+    }
+
+    static double parseDouble(Object in, double def) {
+        // in = object that may be a double
+        // d = default double in case 'in' does not work
+        double result = def;
+        try {
+            Double d = (Double) in;
+            if (d != null)
+                result = d;
+        } catch (Exception e) {
+            try {
+                Long l = (Long) in;
+                if (l != null)
+                    result = l + 0.0;
+            } catch (Exception f) {
+                f.printStackTrace();
+            }
+        }
+        return result;
+    }
+
+    static long parseLong(Object in) { // took out the default since it's usually 0
+        // in = object that may be a long
+        // l = default long in case 'in' does not work
+        long result = 0L;
+        try {
+            Long l = (Long) in;
+            if (l != null)
+                result = l;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // maybe put something that checks if it was a double?
+        return result;
+    }
+
     static String getB64() {
         String result = "";
         try {
@@ -85,6 +149,50 @@ class Globe {
     static String timeToString(double time) {
         int mins = (int) ((time % 1) * 60);
         return ((int) time + ":" + ((mins < 10)?("0"):("")) + mins);
+    }
+
+
+    static void scheduleAlarm(Context ctx, int type) {
+        // type 0 = FitBit updater
+        // type 1 = bedtime notification
+        // type 2 = waketime notification
+        if (Globe.am != null) {
+            if (type == 0) {
+                Intent iFB = new Intent(ctx, DataUpdater.class);
+                iFB.putExtra("type", 0); // 0 = FitBit updater
+                Globe.senderFB = PendingIntent.getBroadcast(ctx, 0, iFB, 0);
+                // start now, 1 hour interval
+                Globe.am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime(), AlarmManager.INTERVAL_HOUR, Globe.senderFB);
+            } else if (type == 1) {
+                Intent iNS = new Intent(ctx, DataUpdater.class);
+                iNS.putExtra("type", 1); // 1 = bedtime notification
+                Globe.senderNS = PendingIntent.getBroadcast(ctx, 1, iNS, 0);
+                // calculate bedtime notification
+                double bedtime = Globe.bedTime;
+                bedtime -= Globe.notification; // subtract notification hours
+                if (bedtime < 0)
+                    bedtime += 24f;
+                // setup time for alarm to go off
+                Calendar c = Calendar.getInstance(); // current time
+                c.setTimeInMillis(System.currentTimeMillis());
+                if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) >= bedtime) // make sure we haven't passed the current bedtime
+                    c.add(Calendar.DATE, 1); // add one day, because we passed the notification time
+                c.set(Calendar.HOUR_OF_DAY, (int) bedtime);
+                c.set(Calendar.MINUTE, (int) ((bedtime % 1) * 60));
+                // start at bedtime notification time, 1 day interval (does not need to be exact)
+                Globe.am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_DAY, Globe.senderNS);
+            } else if (type == 2) {
+                Intent iNS = new Intent(ctx, DataUpdater.class);
+                iNS.putExtra("type", 2); // 2 = redeem notification
+                Globe.senderRD = PendingIntent.getBroadcast(ctx, 2, iNS, 0);
+                Calendar c = Calendar.getInstance(); // current time
+                c.setTimeInMillis(System.currentTimeMillis());
+                c.set(Calendar.HOUR_OF_DAY, 7);
+                c.set(Calendar.MINUTE, 30);
+                // start at 7:30am, 1 day interval (does not need to be exact)
+                Globe.am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_DAY, Globe.senderRD);
+            }
+        }
     }
 
     static void authFitbit(Context ctx) {

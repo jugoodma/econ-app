@@ -11,12 +11,12 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+
+// import org.json.JSONException;
+// import org.json.JSONObject;
 
 /* InBed
  *
@@ -39,21 +39,7 @@ public class InBed extends AppCompatActivity implements View.OnClickListener {
         vel = Globe.dbRef.child(Globe.user.getUid()).child("bedtime").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                Double bedtime = 22.0;
-                try {
-                    Double d = (Double) dataSnapshot.getValue();
-                    if (d != null)
-                        bedtime = d;
-                } catch (Exception e) {
-                    try {
-                        Long l = (Long) dataSnapshot.getValue();
-                        if (l != null)
-                            bedtime = l + 0.0;
-                    } catch (Exception f) {
-                        f.printStackTrace();
-                    }
-                }
-                Globe.bedTime = bedtime;
+                Globe.bedTime = Globe.parseDouble(dataSnapshot.getValue(), 22.0);
                 ((TextView) findViewById(R.id.time_inbed)).setText(String.format(getResources().getString(R.string.bedTime), Globe.timeToString(Globe.bedTime)));
             }
 
@@ -81,10 +67,11 @@ public class InBed extends AppCompatActivity implements View.OnClickListener {
         int i = v.getId();
         if (i == R.id.button_inbed) {
             Calendar c = Calendar.getInstance();
-            // Set hit-button time
-            JSONObject hit = new JSONObject();
+            // Set hit-button time (NO NEED)
+            // JSONObject hit = new JSONObject();
             double time = c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f);
-            time += 0.01f; // guarantee it's stored as a double (36s leeway)
+            // time += 0.01f; // guarantee it's stored as a double (36s leeway)
+            /*
             try {
                 // this is important
                 if (time >= Globe.wakeTime)
@@ -96,6 +83,7 @@ public class InBed extends AppCompatActivity implements View.OnClickListener {
             }
             if (Globe.DEBUG) Log.d(TAG, "Writing data: " + hit);
             Globe.writeData(InBed.this, hit);
+            */
 
             // Set dialogue based on bedtime
             TextView dialogue = findViewById(R.id.dialogue_inbed); // should push to UI-only function?
@@ -107,13 +95,18 @@ public class InBed extends AppCompatActivity implements View.OnClickListener {
                 // pressed it in time
                 time -= 24f;
             }
-            if (time <= ((Globe.bedTime < 12f ? 24f : 0) + Globe.bedTime)) {
+            if (Globe.DEBUG) Log.d(TAG, "time " + time + ", bedtime " + Globe.bedTime);
+            String pressed;
+            if (time <= + Globe.bedTime) {
                 dialogue.setBackgroundColor(Color.GREEN);
                 dialogue.setText(String.format(getResources().getString(R.string.validBed), Globe.timeToString(Globe.wakeTime)));
+                pressed = new SimpleDateFormat("HH:mm:ss", Locale.US).format(c.getTime());
             } else {
                 dialogue.setBackgroundColor(Color.RED);
                 dialogue.setText(getResources().getString(R.string.invalidBed));
+                pressed = "nil";
             }
+            Globe.dbRef.child(Globe.user.getUid()).child("_inbed").child(new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().getTime())).setValue(pressed);
 
             // Turn on Airplane mode
             /*

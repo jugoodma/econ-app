@@ -1,6 +1,8 @@
 package edu.umcp.justingoodman.fitbit_economics_study;
 
 import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -8,6 +10,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.customtabs.CustomTabsIntent;
+import android.support.v4.app.NotificationCompat;
 import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
@@ -66,7 +69,7 @@ class Globe {
     static long group = 0; // 0 = control group, 1 = treatment group
     static double bedTime = -1f; // goal bedtime
     static double notification = 1.0; // time before bedTime that we send a notification
-    static double wakeTime = 8.0; // time the need to wake-up before to get coffee
+    static double wakeTime = 10.0; // time the need to wake-up before to get coffee
     static String access_token = "";
     static String refresh_token = "";
     static String token_type = "";
@@ -79,7 +82,7 @@ class Globe {
     static PendingIntent senderNS; // for bedtime notification service
     static PendingIntent senderRD; // for wakeup redeem notification
 
-    public static final boolean DEBUG = false; // set to false in production
+    public static final boolean DEBUG = true; // set to false in production
 
     /** functions */
     static void init(Context ctx) {
@@ -187,6 +190,8 @@ class Globe {
                 Globe.senderRD = PendingIntent.getBroadcast(ctx, 2, iNS, 0);
                 Calendar c = Calendar.getInstance(); // current time
                 c.setTimeInMillis(System.currentTimeMillis());
+                if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) >= 7.5) // make sure we haven't passed 7:30am
+                    c.add(Calendar.DATE, 1); // add one day, because we passed 7:30am
                 c.set(Calendar.HOUR_OF_DAY, 7);
                 c.set(Calendar.MINUTE, 30);
                 // start at 7:30am, 1 day interval (does not need to be exact)
@@ -202,7 +207,7 @@ class Globe {
             "&response_type=code" +
             "&client_id=" + Globe.client_id +
             "&redirect_uri=" + Globe.callback_uri +
-            "&scope=activity%20sleep";
+            "&scope=activity%20sleep%20settings";
         CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
         builder.setToolbarColor(0xff182B49);
         CustomTabsIntent cti = builder.build();
@@ -318,14 +323,71 @@ class Globe {
 
         // Dates and such
         Calendar c = Calendar.getInstance();
-        c.add(Calendar.DATE, 1);
-        String FITBIT_SLEEP_URL = "https://api.fitbit.com/1.2/user/-/sleep/list.json?beforeDate=" + new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(c.getTime()) + "&sort=desc&offset=0&limit=30";
+        c.add(Calendar.DATE, -30);
+        String before = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(c.getTime());
+        c.add(Calendar.DATE, 31);
+        String after = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(c.getTime());
         c.add(Calendar.DATE, -1);
-        String FITBIT_ACTIVITY_URL;
+        String FITBIT_SLEEP_URL = "https://api.fitbit.com/1.2/user/-/sleep/date/" + before + "/" + after + ".json";
+        String FITBIT_ACTIVITY_URL; // changes
+        String FITBIT_DEVICE_URL = "https://api.fitbit.com/1/user/-/devices.json";
 
         // Set up Authorization
         Map<String, String> headers = new HashMap<>();
         headers.put("Authorization", Globe.token_type + " " + Globe.access_token);
+
+        // Get device battery level (no need for task, since this data is not vital to the research) (maybe add task later)
+        NetworkManager.getInstance().makeRequest(ctx, Request.Method.GET, headers, null, FITBIT_DEVICE_URL, new CustomListener<String>() {
+            @Override
+            public void getResult(String result) {
+                // when we receive response do this
+                if (Globe.DEBUG) Log.d(TAG, "Attempting to extract FitBit DEVICE data...");
+                if (!result.isEmpty()) {
+                    if (Globe.DEBUG) Log.d(TAG, "Here's the result - " + result);
+                    try {
+                        JSONArray a = new JSONArray(result);
+                        int len = a.length();
+                        JSONObject test;
+                        for (int i = 0; i < len; i++) {
+                            test = a.getJSONObject(i);
+                            String type = (String) test.get("type");
+                            if ("TRACKER".equals(type)) {
+                                String battery = (String) test.get("battery");
+                                // set db and send notification if battery is 'Empty' or 'Low'
+                                if ("Low".equals(battery) || "Empty".equals(battery)) {
+                                    Globe.dbRef.child(Globe.user.getUid()).child("_battery").child(type).child(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Calendar.getInstance().getTime())).setValue(battery);
+
+                                    NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+                                    if (nm != null) {
+                                        // no intent necessary...
+                                        PendingIntent pi = PendingIntent.getActivity(ctx, 4, new Intent(), 0);
+
+                                        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
+
+                                        b.setTicker("FitBit Battery");
+                                        b.setContentTitle("FitBit Battery");
+                                        b.setContentText("Your Fitbit battery is " + battery + ". Please charge your device.");
+                                        b.setSmallIcon(R.mipmap.ic_launcher);
+                                        b.setContentIntent(pi);
+                                        // big style
+                                        b.setStyle(new NotificationCompat.BigTextStyle().bigText("Your Fitbit battery is " + battery + ". Please charge your device."));
+
+                                        Notification n = b.build();
+
+                                        // create the notification
+                                        // n.vibrate = new long[]{150, 300, 150, 400};
+                                        n.flags = Notification.FLAG_AUTO_CANCEL;
+                                        nm.notify(R.mipmap.ic_launcher, n);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
 
         // Get prev. 30 sleep records
         NetworkManager.getInstance().makeRequest(ctx, Request.Method.GET, headers, null, FITBIT_SLEEP_URL, new CustomListener<String>() {
@@ -336,6 +398,7 @@ class Globe {
                 if (!result.isEmpty()) {
                     if (Globe.DEBUG) Log.d(TAG, "Here's the result - " + result);
                     try {
+                        // variables
                         JSONArray arr = (new JSONObject(result)).getJSONArray("sleep"); // we only need the sleep array
                         JSONArray test;
                         JSONObject j;
@@ -368,7 +431,62 @@ class Globe {
                                     idx = j.keys();
                                     while (idx.hasNext()) {
                                         s = idx.next();
-                                        if (!s.equals("levels")) // skip the levels object
+                                        if (s.equals("levels")) { // fuck
+                                            try {
+                                                JSONObject summary = (JSONObject) ((JSONObject) j.get("levels")).get("summary");
+                                                String type = (String) j.get("type");
+                                                // i'm sorry
+                                                if (type.equals("classic")) {
+                                                    JSONObject asleep = (JSONObject) summary.get("asleep");
+                                                    JSONObject awake = (JSONObject) summary.get("awake");
+                                                    JSONObject restless = (JSONObject) summary.get("restless");
+                                                    data.put("classicAsleepCount", asleep.get("count"));
+                                                    data.put("classicAsleepDuration", asleep.get("minutes"));
+                                                    data.put("classicAwakeCount", awake.get("count"));
+                                                    data.put("classicAwakeDuration", awake.get("minutes"));
+                                                    data.put("classicRestlessCount", restless.get("count"));
+                                                    data.put("classicRestlessDuration", restless.get("minutes"));
+                                                    data.put("stagesDeepCount", "");
+                                                    data.put("stagesDeepDuration", "");
+                                                    data.put("stagesDeepThirtyDayAvg", "");
+                                                    data.put("stagesLightCount", "");
+                                                    data.put("stagesLightDuration", "");
+                                                    data.put("stagesLightThirtyDayAvg", "");
+                                                    data.put("stagesREMCount", "");
+                                                    data.put("stagesREMDuration", "");
+                                                    data.put("stagesREMThirtyDayAvg", "");
+                                                    data.put("stagesWakeCount", "");
+                                                    data.put("stagesWakeDuration", "");
+                                                    data.put("stagesWakeThirtyDayAvg", "");
+                                                } else if (type.equals("stages")) {
+                                                    JSONObject deep = (JSONObject) summary.get("deep");
+                                                    JSONObject light = (JSONObject) summary.get("light");
+                                                    JSONObject rem = (JSONObject) summary.get("rem");
+                                                    JSONObject wake = (JSONObject) summary.get("wake");
+                                                    data.put("classicAsleepCount", "");
+                                                    data.put("classicAsleepDuration", "");
+                                                    data.put("classicAwakeCount", "");
+                                                    data.put("classicAwakeDuration", "");
+                                                    data.put("classicRestlessCount", "");
+                                                    data.put("classicRestlessDuration", "");
+                                                    data.put("stagesDeepCount", deep.get("count"));
+                                                    data.put("stagesDeepDuration", deep.get("minutes"));
+                                                    data.put("stagesDeepThirtyDayAvg", deep.get("thirtyDayAvgMinutes"));
+                                                    data.put("stagesLightCount", light.get("count"));
+                                                    data.put("stagesLightDuration", light.get("minutes"));
+                                                    data.put("stagesLightThirtyDayAvg", light.get("thirtyDayAvgMinutes"));
+                                                    data.put("stagesREMCount", rem.get("count"));
+                                                    data.put("stagesREMDuration", rem.get("minutes"));
+                                                    data.put("stagesREMThirtyDayAvg", rem.get("thirtyDayAvgMinutes"));
+                                                    data.put("stagesWakeCount", wake.get("count"));
+                                                    data.put("stagesWakeDuration", wake.get("minutes"));
+                                                    data.put("stagesWakeThirtyDayAvg", wake.get("thirtyDayAvgMinutes"));
+                                                }
+                                            } catch (Exception e) {
+                                                // i don't want this 'small' part to crash the whole data collection, so it gets its own try-catch
+                                                if (Globe.DEBUG) Log.d(TAG, "Something went wrong getting the levels-summary data");
+                                            }
+                                        } else // thank god
                                             data.put(s, j.get(s));
                                     }
                                     Globe.dbRef.child(Globe.user.getUid()).child("_sleep").child(j.get("dateOfSleep").toString()).updateChildren(data);
@@ -481,7 +599,7 @@ class Globe {
 
         // set updated time to now
         c.add(Calendar.DATE, 10);
-        Globe.dbRef.child(Globe.user.getUid()).child("updated").setValue(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US).format(c.getTime()));
+        Globe.dbRef.child(Globe.user.getUid()).child("updated").setValue(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(c.getTime()));
     }
 
     static JSONObject readData(Context ctx) {

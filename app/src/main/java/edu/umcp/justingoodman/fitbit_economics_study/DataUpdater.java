@@ -10,6 +10,8 @@ import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import java.util.Calendar;
+
 // import android.os.Build;
 // import android.provider.Settings;
 
@@ -88,7 +90,9 @@ public class DataUpdater extends BroadcastReceiver {
         if (Globe.DEBUG) Log.d(TAG, "Waketime notification service started.");
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         // later - set actual redemption time, and do a *quick* check of validity
-        if (nm != null) {
+        int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
+        // no point in sending notification on sat/sun
+        if (nm != null && !(day == Calendar.SATURDAY || day == Calendar.SUNDAY)) {
             PendingIntent pi = PendingIntent.getActivity(ctx, 4, new Intent(ctx, Launcher.class), 0);
 
             NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");

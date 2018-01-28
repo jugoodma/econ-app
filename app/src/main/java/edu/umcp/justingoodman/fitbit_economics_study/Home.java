@@ -26,13 +26,15 @@ import java.util.concurrent.ExecutionException;
 /* Home
  *
  * The home-screen for the app
- * This is where users can access 'Coffee Rewards', 'In-bed Button', etc...
+ * This is where Group 1 users can access 'Coffee Rewards', 'In-bed Button', etc...
+ * This is where Group 0 users can do very little...
  *
  * **/
 public class Home extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "Home";
 
+    private final Calendar c = Calendar.getInstance();
     private final Handler h = new Handler();
     private final Runnable r = new Runnable() {
         @Override
@@ -64,7 +66,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         p.setVisibility(View.VISIBLE);
         p.bringToFront();
 
-        Globe.am = (AlarmManager) Home.this.getSystemService(ALARM_SERVICE);
+        Globe.am = (AlarmManager) getSystemService(ALARM_SERVICE);
 
         final TaskCompletionSource<Boolean> tcs = new TaskCompletionSource<>();
         final Task<Boolean> t = tcs.getTask();
@@ -79,7 +81,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 // variable from database
                 Globe.stage = Globe.parseLong(dataSnapshot.getValue()); // default 0
-                if (Globe.stage == 0)
+                if (Globe.stage == 0) // only for first passive stage
                     Globe.dbRef.child(Globe.user.getUid()).child("bedtime").setValue("x"); // set bedtime back to 'x'
                 update();
             }
@@ -113,11 +115,13 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 Globe.wakeTime = Globe.parseDouble(dataSnapshot.child("waketime").getValue(), 9.0);
                 Globe.group = Globe.parseLong(dataSnapshot.child("group").getValue()); // default 0
 
-                // Setup delay for 'in-bed' button (simplify the math later)
-                scheduleHandler();
+                // Setup delay for 'in-bed' button (simplify the math later) & update buttons
+                if (Globe.group == 1) {
+                    scheduleHandler();
+                    updateButtons();
+                }
 
                 // update
-                updateButtons();
                 update();
             }
 
@@ -162,6 +166,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     @Override
     public void onResume() {
         super.onResume();
+        c.setTimeInMillis(System.currentTimeMillis());
         /*
         if (Globe.user == null) signOut(); // can't do anything with a null user!
         try {
@@ -191,22 +196,28 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         } else if (i == R.id.inbed_home) {
             Home.this.startActivity(new Intent(Home.this, InBed.class));
         } else if (i == R.id.rewards_home) {
-            Home.this.startActivity(new Intent(Home.this, CoffeeRewards.class));
+            int day = c.get(Calendar.DAY_OF_WEEK);
+            // cannot redeem on saturday or sunday
+            if (day == Calendar.SATURDAY || day == Calendar.SUNDAY)
+                Toast.makeText(Home.this, "No coupons on Saturday or Sunday", Toast.LENGTH_SHORT).show();
+            else
+                Home.this.startActivity(new Intent(Home.this, CoffeeRewards.class));
         }
     }
 
     private void update() {
         // Set some stuff depending on stage
-        if (Globe.stage == 0) {
+        if (Globe.stage == 0 || Globe.stage == 2 || Globe.group == 0) {
             // Make these gone if stage is passive
+            // second passive stage should be same as first, but we don't want to delete the old bedtime
             findViewById(R.id.rewards_home).setVisibility(View.GONE);
             findViewById(R.id.inbed_home).setVisibility(View.GONE);
             findViewById(R.id.goaltime_home).setVisibility(View.GONE);
             // we don't want a bedtime notification if stage is passive
             if (Globe.am != null && Globe.senderNS != null) { Globe.am.cancel(Globe.senderNS); }
             if (Globe.am != null && Globe.senderRD != null) { Globe.am.cancel(Globe.senderRD); }
-        } else if (Globe.stage == 1) {
-            // Make these seen if stage is active
+        } else if (Globe.stage == 1 && Globe.group == 1) {
+            // Make these seen if stage is active AND user is in group 1 (experimental)
             findViewById(R.id.rewards_home).setVisibility(View.VISIBLE);
             findViewById(R.id.inbed_home).setVisibility(View.VISIBLE);
             findViewById(R.id.goaltime_home).setVisibility(View.VISIBLE);
@@ -250,7 +261,6 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         // reset handler too? *****
         // 'in-bed' button becomes available 3hrs before bedtime
         // button is disabled 5hrs after bedtime
-        Calendar c = Calendar.getInstance();
         double time = c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f);
         double disabled = Globe.bedTime + 5; // right bound
         if (disabled > 24)
@@ -281,8 +291,6 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
     private void scheduleHandler() {
         h.removeCallbacks(r);
-        Calendar c = Calendar.getInstance();
-        c.setTimeInMillis(System.currentTimeMillis());
         double time = c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f);
         double disabled = Globe.bedTime + 5; // right bound
         if (disabled > 24)

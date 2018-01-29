@@ -88,6 +88,8 @@ public class DataUpdater extends BroadcastReceiver {
 
     private static void waketimeNotification(Context ctx) {
         if (Globe.DEBUG) Log.d(TAG, "Waketime notification service started.");
+        // we want to actually figure out if they earned the coupon -- realistically,
+        // FitBit probably has not figured out the user's sleep yet... wtf
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         // later - set actual redemption time, and do a *quick* check of validity
         int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);

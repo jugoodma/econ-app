@@ -88,13 +88,11 @@ public class InBed extends AppCompatActivity implements View.OnClickListener {
             // Set dialogue based on bedtime
             TextView dialogue = findViewById(R.id.dialogue_inbed); // should push to UI-only function?
             // This makes the comparison work for all 4 cases of times
-            if (time < 12 && Globe.bedTime >= 12) {
-                // did not press in time
+            if (time < 12 && Globe.bedTime >= 12) // did not press in time
                 time += 24f;
-            } else if (time >= 12 && Globe.bedTime < 12) {
-                // pressed it in time
+            else if (time >= 12 && Globe.bedTime < 12) // pressed it in time
                 time -= 24f;
-            }
+
             if (Globe.DEBUG) Log.d(TAG, "time " + time + ", bedtime " + Globe.bedTime);
             String pressed;
             if (time <= + Globe.bedTime) {

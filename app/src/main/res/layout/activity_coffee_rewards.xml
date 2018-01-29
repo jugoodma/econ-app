@@ -48,7 +48,7 @@
         android:layout_marginRight="10dp"
         android:layout_marginTop="8dp"
         android:background="@android:color/transparent"
-        android:text="@string/valid"
+        android:text="@string/syncFitbit"
         android:textAlignment="center"
         android:textColor="@android:color/white"
         android:textSize="20sp"

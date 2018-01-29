@@ -305,8 +305,11 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
             if (button < 12f)
                 button += 24f;
             */
-            if (start < 12f)
+            // hopefully this will fix the math!
+            if (start < 12 && Globe.bedTime >= 12) // did not press it in time
                 start += 24f;
+            else if (start >= 12 && Globe.bedTime < 12) // did press in time
+                start -= 24f;
             /*
             boolean g1check = true;
             if (Globe.group == 1 && button > Globe.bedTime) {

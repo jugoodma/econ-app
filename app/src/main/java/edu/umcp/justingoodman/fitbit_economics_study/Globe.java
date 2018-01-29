@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.support.customtabs.CustomTabsIntent;
 import android.support.v4.app.NotificationCompat;
 import android.util.Base64;
@@ -150,22 +149,33 @@ class Globe {
     }
 
     static String timeToString(double time) {
+        int hour = (int) time;
+        String m = "AM";
+        if (hour == 0) {
+            hour = 12;
+        } else if (hour >= 12) {
+            if (hour > 12)
+                hour -= 12;
+            m = "PM";
+        }
         int mins = (int) ((time % 1) * 60);
-        return ((int) time + ":" + ((mins < 10)?("0"):("")) + mins);
+        return (hour + ":" + ((mins < 10)?("0"):("")) + mins + " " + m);
     }
-
 
     static void scheduleAlarm(Context ctx, int type) {
         // type 0 = FitBit updater
         // type 1 = bedtime notification
         // type 2 = waketime notification
         if (Globe.am != null) {
+            Calendar c = Calendar.getInstance(); // current time
+            c.setTimeInMillis(System.currentTimeMillis());
             if (type == 0) {
                 Intent iFB = new Intent(ctx, DataUpdater.class);
                 iFB.putExtra("type", 0); // 0 = FitBit updater
                 Globe.senderFB = PendingIntent.getBroadcast(ctx, 0, iFB, 0);
-                // start now, 1 hour interval
-                Globe.am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime(), AlarmManager.INTERVAL_HOUR, Globe.senderFB);
+                c.set(Calendar.MINUTE, 55);
+                // start at the 55min mark, 1 hour interval
+                Globe.am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_HOUR, Globe.senderFB);
             } else if (type == 1) {
                 Intent iNS = new Intent(ctx, DataUpdater.class);
                 iNS.putExtra("type", 1); // 1 = bedtime notification
@@ -176,8 +186,6 @@ class Globe {
                 if (bedtime < 0)
                     bedtime += 24f;
                 // setup time for alarm to go off
-                Calendar c = Calendar.getInstance(); // current time
-                c.setTimeInMillis(System.currentTimeMillis());
                 if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) >= bedtime) // make sure we haven't passed the current bedtime
                     c.add(Calendar.DATE, 1); // add one day, because we passed the notification time
                 c.set(Calendar.HOUR_OF_DAY, (int) bedtime);
@@ -188,8 +196,6 @@ class Globe {
                 Intent iNS = new Intent(ctx, DataUpdater.class);
                 iNS.putExtra("type", 2); // 2 = redeem notification
                 Globe.senderRD = PendingIntent.getBroadcast(ctx, 2, iNS, 0);
-                Calendar c = Calendar.getInstance(); // current time
-                c.setTimeInMillis(System.currentTimeMillis());
                 if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) >= 7.5) // make sure we haven't passed 7:30am
                     c.add(Calendar.DATE, 1); // add one day, because we passed 7:30am
                 c.set(Calendar.HOUR_OF_DAY, 7);
@@ -207,10 +213,11 @@ class Globe {
             "&response_type=code" +
             "&client_id=" + Globe.client_id +
             "&redirect_uri=" + Globe.callback_uri +
-            "&scope=activity%20sleep%20settings";
+            "&scope=activity%20sleep%20settings%20heartrate";
         CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
         builder.setToolbarColor(0xff182B49);
         CustomTabsIntent cti = builder.build();
+        cti.intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY); // hopefully it'll close now
         cti.launchUrl(ctx, Uri.parse(url));
     }
 
@@ -331,6 +338,7 @@ class Globe {
         String FITBIT_SLEEP_URL = "https://api.fitbit.com/1.2/user/-/sleep/date/" + before + "/" + after + ".json";
         String FITBIT_ACTIVITY_URL; // changes
         String FITBIT_DEVICE_URL = "https://api.fitbit.com/1/user/-/devices.json";
+        String FITBIT_HEART_URL = "https://api.fitbit.com/1/user/-/activities/heart/date/" + before + "/" + after + ".json";
 
         // Set up Authorization
         Map<String, String> headers = new HashMap<>();
@@ -350,25 +358,20 @@ class Globe {
                         JSONObject test;
                         for (int i = 0; i < len; i++) {
                             test = a.getJSONObject(i);
-                            String type = (String) test.get("type");
-                            if ("TRACKER".equals(type)) {
+                            if ("TRACKER".equals(test.get("type"))) {
                                 String battery = (String) test.get("battery");
                                 // set db and send notification if battery is 'Empty' or 'Low'
                                 if ("Low".equals(battery) || "Empty".equals(battery)) {
-                                    Globe.dbRef.child(Globe.user.getUid()).child("_battery").child(type).child(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Calendar.getInstance().getTime())).setValue(battery);
+                                    Globe.dbRef.child(Globe.user.getUid()).child("_battery").child((String) test.get("deviceVersion")).child(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Calendar.getInstance().getTime())).setValue(battery);
 
                                     NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
                                     if (nm != null) {
-                                        // no intent necessary...
-                                        PendingIntent pi = PendingIntent.getActivity(ctx, 4, new Intent(), 0);
-
                                         NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
 
                                         b.setTicker("FitBit Battery");
                                         b.setContentTitle("FitBit Battery");
                                         b.setContentText("Your Fitbit battery is " + battery + ". Please charge your device.");
                                         b.setSmallIcon(R.mipmap.ic_launcher);
-                                        b.setContentIntent(pi);
                                         // big style
                                         b.setStyle(new NotificationCompat.BigTextStyle().bigText("Your Fitbit battery is " + battery + ". Please charge your device."));
 
@@ -385,6 +388,63 @@ class Globe {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                } else {
+                    if (Globe.DEBUG) Log.d(TAG, "Response is empty...?");
+                }
+            }
+        });
+
+        // Get heartrate
+        NetworkManager.getInstance().makeRequest(ctx, Request.Method.GET, headers, null, FITBIT_HEART_URL, new CustomListener<String>() {
+            @Override
+            public void getResult(String result) {
+                if (Globe.DEBUG) Log.d(TAG, "Attempting to extract FitBit HEART data...");
+                if (!result.isEmpty()) {
+                    try {
+                        JSONArray arr = (new JSONObject(result)).getJSONArray("activities-heart");
+                        JSONObject j;
+                        Map<String, Object> data = new HashMap<>();
+                        int len = arr.length();
+
+                        for (int i = 0; i < len; i++) {
+                            try {
+                                j = (JSONObject) arr.get(i);
+                            } catch (Exception e) {
+                                j = new JSONObject();
+                            }
+                            if (Globe.DEBUG) Log.d(TAG, j.toString());
+                            try {
+                                JSONObject value = (JSONObject) j.get("value");
+                                JSONArray zones = value.getJSONArray("heartRateZones");
+                                int zLen = zones.length();
+                                for (int k = 0; k < zLen; k++) {
+                                    JSONObject input = (JSONObject) zones.get(k);
+                                    String name = (String) input.remove("name");
+                                    Map<String, Object> sub = new HashMap<>();
+                                    Iterator<String> idx = input.keys();
+                                    while (idx.hasNext()) {
+                                        String s = idx.next();
+                                        sub.put(s, input.get(s));
+                                    }
+                                    data.put(name, sub);
+                                }
+                                try {
+                                    data.put("restingHeartRate", value.get("restingHeartRate"));
+                                } catch (Exception e) {
+                                    if (Globe.DEBUG) Log.d(TAG, "No resting heart rate available!");
+                                }
+                                Globe.dbRef.child(Globe.user.getUid()).child("_heart").child(j.get("dateTime").toString()).updateChildren(data);
+                            } catch (Exception e) {
+                                if (Globe.DEBUG) Log.d(TAG, "One date segment had an error");
+                                e.printStackTrace();
+                            }
+                            data.clear();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    if (Globe.DEBUG) Log.d(TAG, "Response is empty...?");
                 }
             }
         });

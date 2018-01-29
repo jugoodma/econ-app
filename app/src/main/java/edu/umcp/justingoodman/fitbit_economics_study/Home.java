@@ -149,8 +149,12 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                     if (Globe.DEBUG) Log.d(TAG, "About to wait for task...");
                     Tasks.await(t); // don't block on main thread!
                     if (Globe.DEBUG) Log.d(TAG, "Task complete - Scheduling alarm for DataUpdater");
-                    // Sechedule alarm to update FitBit data
+                    // Schedule alarm to update FitBit data
                     Globe.scheduleAlarm(Home.this, 0);
+                    // Update FitBit data
+                    Intent iFB = new Intent(Home.this, DataUpdater.class);
+                    iFB.putExtra("type", 0); // 0 = FitBit updater
+                    sendBroadcast(iFB);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {

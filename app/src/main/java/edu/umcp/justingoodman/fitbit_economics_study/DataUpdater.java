@@ -94,25 +94,31 @@ public class DataUpdater extends BroadcastReceiver {
         // later - set actual redemption time, and do a *quick* check of validity
         int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
         // no point in sending notification on sat/sun
-        if (nm != null && !(day == Calendar.SATURDAY || day == Calendar.SUNDAY)) {
-            PendingIntent pi = PendingIntent.getActivity(ctx, 4, new Intent(ctx, Launcher.class), 0);
+        if (!(day == Calendar.SATURDAY || day == Calendar.SUNDAY)) {
+            // now test the user's sleep data, and see if they might earn a coffee
+            Globe.init(ctx);
+            
 
-            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
+            if (nm != null) {
+                PendingIntent pi = PendingIntent.getActivity(ctx, 4, new Intent(ctx, Launcher.class), 0);
 
-            b.setTicker("Coffee Coupon");
-            b.setContentTitle("Coffee Coupon");
-            b.setContentText("Looks like you might have earned a free coffee! Be sure to redeem your coupon before it expires!");
-            b.setSmallIcon(R.mipmap.ic_launcher);
-            b.setContentIntent(pi);
-            // big style
-            b.setStyle(new NotificationCompat.BigTextStyle().bigText("Looks like you might have earned a free coffee! Be sure to redeem your coupon before it expires!"));
+                NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
 
-            Notification n = b.build();
+                b.setTicker("Coffee Coupon");
+                b.setContentTitle("Coffee Coupon");
+                b.setContentText("Looks like you might have earned a free coffee! Be sure to redeem your coupon before it expires!");
+                b.setSmallIcon(R.mipmap.ic_launcher);
+                b.setContentIntent(pi);
+                // big style
+                b.setStyle(new NotificationCompat.BigTextStyle().bigText("Looks like you might have earned a free coffee! Be sure to redeem your coupon before it expires!"));
 
-            // create the notification
-            // n.vibrate = new long[]{150, 300, 150, 400};
-            n.flags = Notification.FLAG_AUTO_CANCEL;
-            nm.notify(R.mipmap.ic_launcher, n);
+                Notification n = b.build();
+
+                // create the notification
+                // n.vibrate = new long[]{150, 300, 150, 400};
+                n.flags = Notification.FLAG_AUTO_CANCEL;
+                nm.notify(R.mipmap.ic_launcher, n);
+            }
         }
     }
 

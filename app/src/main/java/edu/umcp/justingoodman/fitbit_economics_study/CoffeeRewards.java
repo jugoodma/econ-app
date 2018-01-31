@@ -72,7 +72,7 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Globe.wakeTime = Globe.parseDouble(dataSnapshot.child("waketime").getValue(), 10.0);
-                Globe.bedTime = Globe.parseDouble(dataSnapshot.child("bedtime"), -1.0);
+                Globe.bedTime = Globe.parseDouble(dataSnapshot.child("bedtime").getValue(), -1.0); // are you shitting me, I missed the 'getValue(). FUCK
                 expire.setText(String.format(getResources().getString(R.string.redeemTime), today, Globe.timeToString(Globe.wakeTime)));
             }
 
@@ -269,6 +269,7 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
             Tasks.await(t, 15, TimeUnit.SECONDS);
             if (Globe.DEBUG) Log.d(TAG, "Task in Thread2 complete");
             String s = (String) t.getResult().child(today).child("startTime").getValue();
+            if (Globe.DEBUG) Log.d(TAG, "startTime " + s);
             if (s != null) {
                 result = 0f;
                 result += Integer.parseInt(s.substring(11, 13));
@@ -282,7 +283,7 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if (Globe.DEBUG) Log.d(TAG, "setting start value");
+        if (Globe.DEBUG) Log.d(TAG, "setting start value " + result);
         start = result;
     }
 
@@ -318,6 +319,7 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
             */
             // 'in-bed' button time must be within 30 minutes of falling asleep (NOT ANYMORE) (button <= start + 0.5 && g1check)
             // UPDATE: user must have fallen asleep before bedtime (i'm adding 5min leeway here)
+            if (Globe.DEBUG) Log.d(TAG, "start " + start + " bedtime " + Globe.bedTime);
             if (start <= Globe.bedTime + (5 / 60f)) {
                 // display coupon
                 // display cancel/redeem buttons for Barista

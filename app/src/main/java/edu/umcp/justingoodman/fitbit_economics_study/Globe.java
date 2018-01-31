@@ -81,7 +81,7 @@ class Globe {
     static PendingIntent senderNS; // for bedtime notification service
     static PendingIntent senderRD; // for wakeup redeem notification
 
-    public static final boolean DEBUG = true; // set to false in production
+    public static final boolean DEBUG = false; // set to false in production
 
     /** functions */
     static void init(Context ctx) {
@@ -506,29 +506,29 @@ class Globe {
                                                     data.put("classicAwakeDuration", awake.get("minutes"));
                                                     data.put("classicRestlessCount", restless.get("count"));
                                                     data.put("classicRestlessDuration", restless.get("minutes"));
-                                                    data.put("stagesDeepCount", "");
-                                                    data.put("stagesDeepDuration", "");
-                                                    data.put("stagesDeepThirtyDayAvg", "");
-                                                    data.put("stagesLightCount", "");
-                                                    data.put("stagesLightDuration", "");
-                                                    data.put("stagesLightThirtyDayAvg", "");
-                                                    data.put("stagesREMCount", "");
-                                                    data.put("stagesREMDuration", "");
-                                                    data.put("stagesREMThirtyDayAvg", "");
-                                                    data.put("stagesWakeCount", "");
-                                                    data.put("stagesWakeDuration", "");
-                                                    data.put("stagesWakeThirtyDayAvg", "");
+                                                    data.put("stagesDeepCount", "-");
+                                                    data.put("stagesDeepDuration", "-");
+                                                    data.put("stagesDeepThirtyDayAvg", "-");
+                                                    data.put("stagesLightCount", "-");
+                                                    data.put("stagesLightDuration", "-");
+                                                    data.put("stagesLightThirtyDayAvg", "-");
+                                                    data.put("stagesREMCount", "-");
+                                                    data.put("stagesREMDuration", "-");
+                                                    data.put("stagesREMThirtyDayAvg", "-");
+                                                    data.put("stagesWakeCount", "-");
+                                                    data.put("stagesWakeDuration", "-");
+                                                    data.put("stagesWakeThirtyDayAvg", "-");
                                                 } else if (type.equals("stages")) {
                                                     JSONObject deep = (JSONObject) summary.get("deep");
                                                     JSONObject light = (JSONObject) summary.get("light");
                                                     JSONObject rem = (JSONObject) summary.get("rem");
                                                     JSONObject wake = (JSONObject) summary.get("wake");
-                                                    data.put("classicAsleepCount", "");
-                                                    data.put("classicAsleepDuration", "");
-                                                    data.put("classicAwakeCount", "");
-                                                    data.put("classicAwakeDuration", "");
-                                                    data.put("classicRestlessCount", "");
-                                                    data.put("classicRestlessDuration", "");
+                                                    data.put("classicAsleepCount", "-");
+                                                    data.put("classicAsleepDuration", "-");
+                                                    data.put("classicAwakeCount", "-");
+                                                    data.put("classicAwakeDuration", "-");
+                                                    data.put("classicRestlessCount", "-");
+                                                    data.put("classicRestlessDuration", "-");
                                                     data.put("stagesDeepCount", deep.get("count"));
                                                     data.put("stagesDeepDuration", deep.get("minutes"));
                                                     data.put("stagesDeepThirtyDayAvg", deep.get("thirtyDayAvgMinutes"));

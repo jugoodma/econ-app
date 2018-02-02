@@ -10,7 +10,18 @@ import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
+
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 // import android.os.Build;
 // import android.provider.Settings;
@@ -95,22 +106,55 @@ public class DataUpdater extends BroadcastReceiver {
         int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
         // no point in sending notification on sat/sun
         if (!(day == Calendar.SATURDAY || day == Calendar.SUNDAY)) {
-            // now test the user's sleep data, and see if they might earn a coffee
+            // now test the user's sleep data, and see if they MIGHT earn a coffee
             Globe.init(ctx);
-            
-
-            if (nm != null) {
+            Calendar c = Calendar.getInstance();
+            c.setTimeInMillis(System.currentTimeMillis());
+            String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(c.getTime());
+            // get the sleep start time
+            double time = -1.0;
+            boolean flag = false;
+            String message = "Sync your FitBit to find out if you earned a free coffee!";
+            final TaskCompletionSource<DataSnapshot> tcs = new TaskCompletionSource<>();
+            final Task<DataSnapshot> t = tcs.getTask();
+            Globe.dbRef.child(Globe.user.getUid()).child("_sleep").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) { tcs.setResult(dataSnapshot); }
+                @Override
+                public void onCancelled(DatabaseError error) { tcs.setException(error.toException()); }
+            });
+            try {
+                Tasks.await(t, 15, TimeUnit.SECONDS);
+                String s = (String) t.getResult().child(today).child("startTime").getValue();
+                if (Globe.DEBUG) Log.d(TAG, "startTime " + s);
+                if (s != null) {
+                    time += Integer.parseInt(s.substring(11, 13));
+                    time += Integer.parseInt(s.substring(14, 16)) / 60f;
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                if (Globe.DEBUG) Log.d(TAG, "Failed to read value.");
+                flag = true;
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (!flag) { // java simplified this for me, hopefully it works lol
+                flag = !(time < 12 && Globe.bedTime >= 12) && (time >= 12 && Globe.bedTime < 12 || time <= Globe.wakeTime + (5 / 60f));
+            }
+            if (nm != null && flag) {
                 PendingIntent pi = PendingIntent.getActivity(ctx, 4, new Intent(ctx, Launcher.class), 0);
 
                 NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
 
                 b.setTicker("Coffee Coupon");
                 b.setContentTitle("Coffee Coupon");
-                b.setContentText("Looks like you might have earned a free coffee! Be sure to redeem your coupon before it expires!");
+                b.setContentText(message);
                 b.setSmallIcon(R.mipmap.ic_launcher);
                 b.setContentIntent(pi);
                 // big style
-                b.setStyle(new NotificationCompat.BigTextStyle().bigText("Looks like you might have earned a free coffee! Be sure to redeem your coupon before it expires!"));
+                b.setStyle(new NotificationCompat.BigTextStyle().bigText(message));
 
                 Notification n = b.build();
 

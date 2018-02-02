@@ -38,11 +38,16 @@ public class BootUpdater extends BroadcastReceiver {
                             // set globals
                             Globe.bedTime = Globe.parseDouble(d.child("bedtime"), 22.0);
                             Globe.notification = Globe.parseDouble(d.child("notification"), 1.0);
-                            Globe.wakeTime = Globe.parseDouble(d.child("waketime"), 9.0);
+                            Globe.wakeTime = Globe.parseDouble(d.child("waketime"), 10.0);
 
-                            // now set the alarms
-                            Globe.scheduleAlarm(ctx, 0);
-                            Globe.scheduleAlarm(ctx, 1);
+                            // schedule fitbit
+                            Globe.scheduleAlarm(ctx, 0); // fitbit updater
+
+                            // schedule notifications if stage is active
+                            if (Globe.stage == 1) {
+                                Globe.scheduleAlarm(ctx, 1); // bedtime notification
+                                Globe.scheduleAlarm(ctx, 2); // waketime notification
+                            }
                         }
 
                         @Override

@@ -200,10 +200,12 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         } else if (i == R.id.inbed_home) {
             Home.this.startActivity(new Intent(Home.this, InBed.class));
         } else if (i == R.id.rewards_home) {
-            int day = c.get(Calendar.DAY_OF_WEEK);
-            // cannot redeem on saturday or sunday
+            // TODO: schedule a handler for this
+            int day = c.get(Calendar.DAY_OF_WEEK); // cannot redeem on saturday or sunday, or before 7:30am
             if (day == Calendar.SATURDAY || day == Calendar.SUNDAY)
                 Toast.makeText(Home.this, "No coupons on Saturday or Sunday", Toast.LENGTH_SHORT).show();
+            else if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) < 7.5)
+                Toast.makeText(Home.this, "It's before 7:30AM!", Toast.LENGTH_SHORT).show();
             else
                 Home.this.startActivity(new Intent(Home.this, CoffeeRewards.class));
         }
@@ -220,7 +222,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             // we don't want a bedtime notification if stage is passive
             if (Globe.am != null && Globe.senderNS != null) { Globe.am.cancel(Globe.senderNS); }
             if (Globe.am != null && Globe.senderRD != null) { Globe.am.cancel(Globe.senderRD); }
-        } else if (Globe.stage == 1 && Globe.group == 1) {
+        } else { // stage is 1 and group is 1
             // Make these seen if stage is active AND user is in group 1 (experimental)
             findViewById(R.id.rewards_home).setVisibility(View.VISIBLE);
             findViewById(R.id.inbed_home).setVisibility(View.VISIBLE);
@@ -239,7 +241,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             // Schedule alarms for bedtime/waketime notifications
             Globe.scheduleAlarm(Home.this, 1);
             Globe.scheduleAlarm(Home.this, 2);
-        } // else ?
+        }
     }
 
     private void signOut() {
@@ -262,7 +264,6 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     }
 
     private void updateButtons() {
-        // reset handler too? *****
         // 'in-bed' button becomes available 3hrs before bedtime
         // button is disabled 5hrs after bedtime
         double time = c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f);

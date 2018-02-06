@@ -4,7 +4,7 @@
 
     <!-- Launcher -->
     <string name="logo_desc">Logo</string>
-    <string name="email">e-mail</string>
+    <string name="email">participant ID</string>
     <string name="password">password</string>
     <string name="sign">Sign In</string>
     <string name="newUser">Create Account</string>
@@ -20,7 +20,7 @@
 
     <!-- NewUser -->
     <string name="reenter">re-enter password</string>
-    <string name="id">enter participant ID</string>
+    <string name="id">participant ID</string>
     <string name="code">enter participant code</string>
     <string name="submit">submit</string>
 

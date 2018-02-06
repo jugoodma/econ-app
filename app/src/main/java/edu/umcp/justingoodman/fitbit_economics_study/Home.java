@@ -100,7 +100,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 // This method is called once with the initial value and again
                 // whenever data at this location is updated.
                 // Display user's random id
-                ((TextView) findViewById(R.id.welcome_home)).setText(String.format(getResources().getString(R.string.welcome), dataSnapshot.getKey()));
+                ((TextView) findViewById(R.id.welcome_home)).setText(String.format(getResources().getString(R.string.welcome), dataSnapshot.child("id").getValue()));
                 if (Globe.DEBUG) Log.d(TAG, "Current user is: " + dataSnapshot.getKey());
 
                 if (updater) {
@@ -221,6 +221,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             findViewById(R.id.rewards_home).setVisibility(View.GONE);
             findViewById(R.id.inbed_home).setVisibility(View.GONE);
             findViewById(R.id.goaltime_home).setVisibility(View.GONE);
+            findViewById(R.id.waketime_home).setVisibility(View.GONE);
             // we don't want a bedtime notification if stage is passive
             if (Globe.am != null && Globe.senderNS != null) { Globe.am.cancel(Globe.senderNS); }
             if (Globe.am != null && Globe.senderRD != null) { Globe.am.cancel(Globe.senderRD); }
@@ -230,6 +231,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             findViewById(R.id.rewards_home).setVisibility(View.VISIBLE);
             findViewById(R.id.inbed_home).setVisibility(View.VISIBLE);
             findViewById(R.id.goaltime_home).setVisibility(View.VISIBLE);
+            findViewById(R.id.waketime_home).setVisibility(View.VISIBLE);
             if (calcBed) {
                 calcBed = false;
                 // call Globe bedtime calculator (will set the bedtime correctly on the db)
@@ -269,7 +271,9 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     private void updateButtons() {
         // 'in-bed' button becomes available 3hrs before bedtime
         // button is disabled 5hrs after bedtime
+        c.setTimeInMillis(System.currentTimeMillis());
         double time = c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f);
+        if (Globe.DEBUG) Log.d(TAG, "current time " + time);
         double disabled = Globe.bedTime + 5; // right bound
         if (disabled > 24)
             disabled -= 24f;
@@ -278,7 +282,8 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             time -= 24f;
         }
         if (Globe.DEBUG) Log.d(TAG, "times: " + enabled + " - " + time + " - " + disabled);
-        final boolean flag = (time >= enabled && time <= disabled);
+        final boolean flag = (enabled <= time && time <= disabled);
+        if (Globe.DEBUG) Log.d(TAG, "Handler times true or false = " + flag);
 
         this.runOnUiThread(new Runnable() { // just to be sure
             @Override
@@ -299,6 +304,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
     private void scheduleHandler() {
         h.removeCallbacks(r);
+        c.setTimeInMillis(System.currentTimeMillis());
         double time = c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f);
         double disabled = Globe.bedTime + 5; // right bound
         if (disabled > 24)

@@ -16,6 +16,7 @@ import com.google.firebase.auth.AuthResult;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /* NewUser
  *
@@ -33,6 +34,13 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
     private EditText reenter;
     private EditText code;
     private ProgressBar p;
+
+    private Runnable r = new Runnable() {
+        @Override
+        public void run() {
+            p.setVisibility(View.GONE);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,8 +73,8 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
 
     private void createAccount(String email, String password) {
         if (BuildConfig.DEBUG) Log.d(TAG, "createAccount:" + email);
-        if (validateForm()) {
-            Globe.auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(NewUser.this, new OnCompleteListener<AuthResult>() {
+        if (validateForm()) { // NOTE below, we are putting our domain on the email form, and saving the IDs for later
+            Globe.auth.createUserWithEmailAndPassword(email + Globe.DOMAIN, password).addOnCompleteListener(NewUser.this, new OnCompleteListener<AuthResult>() {
                 @Override
                 public void onComplete(@NonNull Task<AuthResult> task) {
                     if (task.isSuccessful()) {
@@ -78,15 +86,12 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
                     } else {
                         if (Globe.DEBUG) Log.d(TAG, "createUserWithEmail - failure", task.getException());
                         Toast.makeText(NewUser.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                p.setVisibility(View.GONE);
-                            }
-                        });
+                        runOnUiThread(r);
                     }
                 }
             });
+        } else {
+            runOnUiThread(r);
         }
     }
 
@@ -94,8 +99,12 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
         boolean valid = true;
         String req = "Required.";
 
-        if (TextUtils.isEmpty(email.getText().toString())) {
+        String em = email.getText().toString(); // This is the participant ID, but we treat it like an email
+        if (TextUtils.isEmpty(em)) {
             email.setError(req);
+            valid = false;
+        } else if (!Pattern.matches("[0-9a-zA-Z]+", em)) {
+            email.setError("No special characters.");
             valid = false;
         } else {
             email.setError(null);
@@ -147,7 +156,7 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
         nUser.put("notification", 1); // hours before bedtime
         nUser.put("waketime", 10.0001);
         nUser.put("updated", "---");
-        nUser.put("id", "");
+        nUser.put("id", email.getText().toString()); // should be an email W/O the @sleep-coffee-research.firebaseapp.com part
         Globe.dbRef.child(Globe.user.getUid()).updateChildren(nUser);
     }
 

@@ -14,14 +14,15 @@
         android:layout_marginTop="56dp"
         android:ems="10"
         android:hapticFeedbackEnabled="true"
-        android:hint="@string/email"
+        android:hint="@string/id"
         android:inputType="textEmailAddress"
         android:textColor="@color/colorAccent"
         android:textColorHint="@color/colorAccent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:layout_constraintLeft_creator="1"
-        tools:layout_constraintTop_creator="1" android:layout_marginStart="28dp"/>
+        tools:layout_constraintTop_creator="1"
+        android:layout_marginStart="28dp" />
 
     <EditText
         android:id="@+id/password_new"
@@ -59,37 +60,18 @@
         tools:layout_constraintTop_creator="1" />
 
     <EditText
-        android:id="@+id/id_new"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hapticFeedbackEnabled="true"
-        android:hint="@string/id"
-        android:inputType="textNoSuggestions"
-        android:textColor="@color/colorAccent"
-        android:textColorHint="@color/colorAccent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintLeft_toLeftOf="@+id/reenter_new"
-        app:layout_constraintRight_toRightOf="@+id/reenter_new"
-        app:layout_constraintTop_toBottomOf="@+id/reenter_new"
-        tools:layout_constraintLeft_creator="1"
-        tools:layout_constraintRight_creator="1"
-        tools:layout_constraintTop_creator="1" />
-
-    <EditText
         android:id="@+id/code_new"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
         android:hapticFeedbackEnabled="true"
         android:hint="@string/code"
-        android:inputType="textNoSuggestions"
+        android:inputType="text"
         android:textColor="@color/colorAccent"
         android:textColorHint="@color/colorAccent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintLeft_toLeftOf="@+id/id_new"
-        app:layout_constraintRight_toRightOf="@+id/id_new"
-        app:layout_constraintTop_toBottomOf="@+id/id_new"
+        app:layout_constraintEnd_toEndOf="@+id/reenter_new"
+        app:layout_constraintStart_toStartOf="@+id/reenter_new"
+        app:layout_constraintTop_toBottomOf="@+id/reenter_new"
         tools:layout_constraintLeft_creator="1"
         tools:layout_constraintRight_creator="1"
         tools:layout_constraintTop_creator="1" />
@@ -107,7 +89,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/progressbar"
-        app:layout_constraintTop_toBottomOf="@+id/code_new"
+        app:layout_constraintTop_toTopOf="parent"
         tools:layout_constraintRight_creator="1"
         tools:layout_constraintTop_creator="1" />
 

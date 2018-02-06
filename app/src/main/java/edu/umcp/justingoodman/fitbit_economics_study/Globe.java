@@ -63,6 +63,7 @@ class Globe {
     // *** client secret is below (only ever used here)
     static final String callback_uri = "scr://callback";
     static final String FITBIT_AUTH_URL = "https://api.fitbit.com/oauth2/token";
+    static final String DOMAIN = "@sleep-coffee-research.firebaseapp.com";
 
     static long stage = 0; // 0 = passive stage (0-2 weeks), 1 = active stage (treatment/control groups, 3-6 weeks), 2 = ? (7-8 weeks)
     static long group = 0; // 0 = control group, 1 = treatment group

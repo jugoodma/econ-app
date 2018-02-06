@@ -94,7 +94,7 @@ public class Launcher extends AppCompatActivity implements View.OnClickListener 
     private void signIn(String email, String password) {
         if (Globe.DEBUG) Log.d(TAG, "signIn:" + email);
         if (validateForm()) {
-            Globe.auth.signInWithEmailAndPassword(email, password).addOnCompleteListener(Launcher.this, new OnCompleteListener<AuthResult>() {
+            Globe.auth.signInWithEmailAndPassword(email + Globe.DOMAIN, password).addOnCompleteListener(Launcher.this, new OnCompleteListener<AuthResult>() {
                 @Override
                 public void onComplete(@NonNull Task<AuthResult> task) {
                     if (task.isSuccessful()) {

@@ -140,11 +140,14 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
         // _activity
         // _coffee
         // _sleep
+        // _battery
+        // _heart
         nUser.put("bedtime", "x"); // 'x' = first stage
         nUser.put("group", 0); // 0 = control group
         nUser.put("notification", 1); // hours before bedtime
         nUser.put("waketime", 10.0001);
         nUser.put("updated", "---");
+        nUser.put("id", "");
         Globe.dbRef.child(Globe.user.getUid()).updateChildren(nUser);
     }
 

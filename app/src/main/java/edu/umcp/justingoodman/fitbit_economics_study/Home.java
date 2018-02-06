@@ -112,8 +112,10 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 // variables from database
                 Globe.bedTime = Globe.parseDouble(dataSnapshot.child("bedtime").getValue(), 22.0);
                 Globe.notification = Globe.parseDouble(dataSnapshot.child("notification").getValue(), 1.0);
-                Globe.wakeTime = Globe.parseDouble(dataSnapshot.child("waketime").getValue(), 9.0);
+                Globe.wakeTime = Globe.parseDouble(dataSnapshot.child("waketime").getValue(), 10.0);
                 Globe.group = Globe.parseLong(dataSnapshot.child("group").getValue()); // default 0
+
+                calcBed = "x".equals(dataSnapshot.child("bedtime").getValue());
 
                 // Setup delay for 'in-bed' button (simplify the math later) & update buttons
                 if (Globe.group == 1) {
@@ -224,6 +226,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             if (Globe.am != null && Globe.senderRD != null) { Globe.am.cancel(Globe.senderRD); }
         } else { // stage is 1 and group is 1
             // Make these seen if stage is active AND user is in group 1 (experimental)
+            if (Globe.DEBUG) Log.d(TAG, "update is else... calcBed is " + calcBed);
             findViewById(R.id.rewards_home).setVisibility(View.VISIBLE);
             findViewById(R.id.inbed_home).setVisibility(View.VISIBLE);
             findViewById(R.id.goaltime_home).setVisibility(View.VISIBLE);

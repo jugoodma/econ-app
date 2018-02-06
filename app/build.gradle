@@ -10,8 +10,8 @@ android {
         applicationId "edu.ucsd.justingoodman.sleep_coffee_research"
         minSdkVersion 15
         targetSdkVersion 27
-        versionCode 36
-        versionName "1.1.2.7"
+        versionCode 37
+        versionName "1.1.2.8"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

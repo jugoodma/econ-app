@@ -142,6 +142,8 @@ public class DataUpdater extends BroadcastReceiver {
             }
             if (!flag) { // java simplified this for me, hopefully it works lol
                 flag = !(time < 12 && Globe.bedTime >= 12) && (time >= 12 && Globe.bedTime < 12 || time <= Globe.wakeTime + (5 / 60f));
+                if (flag)
+                    message = "You may have earned a free coffee, nice!";
             }
             if (nm != null && flag) {
                 PendingIntent pi = PendingIntent.getActivity(ctx, 4, new Intent(ctx, Launcher.class), 0);

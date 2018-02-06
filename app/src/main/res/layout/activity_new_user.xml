@@ -59,6 +59,24 @@
         tools:layout_constraintTop_creator="1" />
 
     <EditText
+        android:id="@+id/id_new"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hapticFeedbackEnabled="true"
+        android:hint="@string/id"
+        android:inputType="textNoSuggestions"
+        android:textColor="@color/colorAccent"
+        android:textColorHint="@color/colorAccent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintLeft_toLeftOf="@+id/reenter_new"
+        app:layout_constraintRight_toRightOf="@+id/reenter_new"
+        app:layout_constraintTop_toBottomOf="@+id/reenter_new"
+        tools:layout_constraintLeft_creator="1"
+        tools:layout_constraintRight_creator="1"
+        tools:layout_constraintTop_creator="1" />
+
+    <EditText
         android:id="@+id/code_new"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -69,9 +87,9 @@
         android:textColor="@color/colorAccent"
         android:textColorHint="@color/colorAccent"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintLeft_toLeftOf="@+id/reenter_new"
-        app:layout_constraintRight_toRightOf="@+id/reenter_new"
-        app:layout_constraintTop_toBottomOf="@+id/reenter_new"
+        app:layout_constraintLeft_toLeftOf="@+id/id_new"
+        app:layout_constraintRight_toRightOf="@+id/id_new"
+        app:layout_constraintTop_toBottomOf="@+id/id_new"
         tools:layout_constraintLeft_creator="1"
         tools:layout_constraintRight_creator="1"
         tools:layout_constraintTop_creator="1" />
@@ -89,7 +107,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/progressbar"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/code_new"
         tools:layout_constraintRight_creator="1"
         tools:layout_constraintTop_creator="1" />
 

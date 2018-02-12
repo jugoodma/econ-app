@@ -15,4 +15,10 @@
     <!--<style name="button">
         <item name="android:background">@android:color/holo_orange_dark</item>
     </style>-->
+
+    <style name="Dialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@android:color/holo_orange_dark</item>
+    </style>
 </resources>

@@ -41,7 +41,6 @@
                 <data android:host="callback" android:scheme="scr" />
             </intent-filter>
         </activity>
-        <activity android:name="edu.umcp.justingoodman.fitbit_economics_study.InBed" android:theme="@style/AppTheme" />
         <activity android:name="edu.umcp.justingoodman.fitbit_economics_study.CoffeeRewards" android:theme="@style/AppTheme" />
     </application>
 </manifest>

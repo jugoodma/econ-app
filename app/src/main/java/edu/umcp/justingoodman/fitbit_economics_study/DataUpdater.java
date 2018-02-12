@@ -111,8 +111,7 @@ public class DataUpdater extends BroadcastReceiver {
             Calendar c = Calendar.getInstance();
             c.setTimeInMillis(System.currentTimeMillis());
             String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(c.getTime());
-            // get the sleep start time
-            double time = -1.0;
+            double time = -1.0; // get the sleep start time
             boolean flag = false;
             String message = "Sync your FitBit to find out if you earned a free coffee!";
             final TaskCompletionSource<DataSnapshot> tcs = new TaskCompletionSource<>();
@@ -140,7 +139,7 @@ public class DataUpdater extends BroadcastReceiver {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            if (!flag) { // java simplified this for me, hopefully it works lol
+            if (!flag && time > -1) { // java simplified this for me, hopefully it works lol
                 flag = !(time < 12 && Globe.bedTime >= 12) && (time >= 12 && Globe.bedTime < 12 || time <= Globe.wakeTime + (5 / 60f));
                 if (flag)
                     message = "You may have earned a free coffee, nice!";

@@ -82,7 +82,7 @@ class Globe {
     static PendingIntent senderNS; // for bedtime notification service
     static PendingIntent senderRD; // for wakeup redeem notification
 
-    public static final boolean DEBUG = true; // set to false in production
+    public static final boolean DEBUG = false; // set to false in production
 
     /** functions */
     static void init(Context ctx) {

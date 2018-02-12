@@ -24,12 +24,6 @@
     <string name="code">enter participant code</string>
     <string name="submit">submit</string>
 
-    <!-- InBed -->
-    <string name="bedTime">Goal bedtime: %1$s</string>
-    <string name="invalidBed">Sorry, you missed your bedtime! Make sure to get to bed on time to earn your free coffee. Now lock your phone and get some sleep.</string>
-    <string name="validBed">You\'ve earned a free cup of coffee! Redeem your coupon tomorrow morning before %1$s at ABC Coffee Shop. Now lock your phone and get some sleep.</string>
-    <string name="inBed">I\'m in bed - earn my FREE coffee!</string>
-
     <!-- CoffeeRewards -->
     <string name="coupon">Coffee Coupon</string>
     <string name="coupon_desc">Cup of Coffee</string>

@@ -65,6 +65,7 @@ class Globe {
     static final String FITBIT_AUTH_URL = "https://api.fitbit.com/oauth2/token";
     static final String DOMAIN = "@sleep-coffee-research.firebaseapp.com";
 
+    static long minSleep = 390; // the minimum sleep duration to earn a coupon (7 hours with 30min leniency)
     static long stage = 0; // 0 = passive stage (0-2 weeks), 1 = active stage (treatment/control groups, 3-6 weeks), 2 = ? (7-8 weeks)
     static long group = 0; // 0 = control group, 1 = treatment group
     static double bedTime = -1f; // goal bedtime
@@ -123,10 +124,10 @@ class Globe {
         return result;
     }
 
-    static long parseLong(Object in) { // took out the default since it's usually 0
+    static long parseLong(Object in, long def) { // took out the default since it's usually 0
         // in = object that may be a long
         // l = default long in case 'in' does not work
-        long result = 0L;
+        long result = def;
         try {
             Long l = (Long) in;
             if (l != null)
@@ -180,6 +181,7 @@ class Globe {
             } else if (type == 1) {
                 Intent iNS = new Intent(ctx, DataUpdater.class);
                 iNS.putExtra("type", 1); // 1 = bedtime notification
+                iNS.putExtra("bedtime", Globe.bedTime);
                 Globe.senderNS = PendingIntent.getBroadcast(ctx, 1, iNS, 0);
                 // calculate bedtime notification
                 double bedtime = Globe.bedTime;

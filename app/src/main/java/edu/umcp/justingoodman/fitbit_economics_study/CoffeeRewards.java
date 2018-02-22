@@ -45,6 +45,7 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
     private final String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(c.getTime());
     // private double button = -1f;
     private double start = -1f;
+    private long sleeplen = 300;
     private boolean noCheat = false;
     private ValueEventListener vel;
 
@@ -197,7 +198,7 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
         }
         if (Globe.DEBUG) Log.d(TAG, "Thread2 joined");
 
-        // after this point, cheat & button & start are set
+        // after this point, cheat & button & start & sleeplen are set
         t3.start();
         try {
             t3.join(); // wait
@@ -254,8 +255,10 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
     }
 
     // returns the time the user actually went to sleep
+    // also gets how LONG the user slept
     private void getStart() {
         double result = -1f;
+        long length = 400;
         final TaskCompletionSource<DataSnapshot> tcs = new TaskCompletionSource<>();
         final Task<DataSnapshot> t = tcs.getTask();
         Globe.dbRef.child(Globe.user.getUid()).child("_sleep").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -268,12 +271,26 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
             if (Globe.DEBUG) Log.d(TAG, "Waiting for task in Thread2...");
             Tasks.await(t, 15, TimeUnit.SECONDS);
             if (Globe.DEBUG) Log.d(TAG, "Task in Thread2 complete");
-            String s = (String) t.getResult().child(today).child("startTime").getValue();
-            if (Globe.DEBUG) Log.d(TAG, "startTime " + s);
-            if (s != null) {
-                result = 0f;
-                result += Integer.parseInt(s.substring(11, 13));
-                result += Integer.parseInt(s.substring(14, 16)) / 60f;
+            // sleep start time
+            try {
+                String s = (String) t.getResult().child(today).child("startTime").getValue();
+                if (Globe.DEBUG) Log.d(TAG, "startTime " + s);
+                if (s != null) {
+                    result = 0f;
+                    result += Integer.parseInt(s.substring(11, 13));
+                    result += Integer.parseInt(s.substring(14, 16)) / 60f;
+                }
+            } catch (Exception e) {
+                // if this fails I still want ot run the second part
+                e.printStackTrace();
+            }
+            // sleep length
+            try {
+                length = Globe.parseLong(t.getResult().child(today).child("minutesAsleep").getValue(), 300); // default is something greater than the min requirement
+                if (Globe.DEBUG) Log.d(TAG, "minutesAsleep " + length);
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -283,8 +300,9 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if (Globe.DEBUG) Log.d(TAG, "setting start value " + result);
+        if (Globe.DEBUG) Log.d(TAG, "setting start value & sleep length " + result + ", " + length);
         start = result;
+        sleeplen = length;
     }
 
     // decides if the user gets the coupon
@@ -299,7 +317,10 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
 
         // UPDATE: 'in-bed' button does not need to be pressed for any group
         // time should be before waketime (redeem time) (5min leeway) & they need a sleep record
-        if (noCheat && time <= Globe.wakeTime + (5 / 60f) /* && button != -1f */ && start != -1f) {
+
+        // UPDATE: user must also have slept 7 hours (420mins) with a 30min leniency (390mins)
+        // Globe.minSleep includes the leniency
+        if (noCheat && time <= Globe.wakeTime + (5 / 60f) /* && button != -1f */ && start != -1f && sleeplen >= Globe.minSleep) {
             // button = time the user hit the 'in-bed' button
             // start = time the user fell asleep
             /*

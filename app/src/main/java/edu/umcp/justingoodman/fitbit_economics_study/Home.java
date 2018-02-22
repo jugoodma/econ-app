@@ -68,7 +68,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 // variable from database
-                Globe.stage = Globe.parseLong(dataSnapshot.getValue()); // default 0
+                Globe.stage = Globe.parseLong(dataSnapshot.getValue(), 0); // default 0
                 if (Globe.stage == 0) // only for first passive stage
                     Globe.dbRef.child(Globe.user.getUid()).child("bedtime").setValue("x"); // set bedtime back to 'x'
                 update();
@@ -101,7 +101,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 Globe.bedTime = Globe.parseDouble(dataSnapshot.child("bedtime").getValue(), 22.0);
                 Globe.notification = Globe.parseDouble(dataSnapshot.child("notification").getValue(), 1.0);
                 Globe.wakeTime = Globe.parseDouble(dataSnapshot.child("waketime").getValue(), 10.0);
-                Globe.group = Globe.parseLong(dataSnapshot.child("group").getValue()); // default 0
+                Globe.group = Globe.parseLong(dataSnapshot.child("group").getValue(), 0); // default 0
 
                 calcBed = "x".equals(dataSnapshot.child("bedtime").getValue());
 

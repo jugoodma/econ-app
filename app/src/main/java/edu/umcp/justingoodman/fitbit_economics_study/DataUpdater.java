@@ -42,7 +42,7 @@ public class DataUpdater extends BroadcastReceiver {
         if (Globe.DEBUG) Log.d(TAG, "Type is " + type);
 
         if (type == 0) DataUpdater.collectFitbitData(ctx);
-        if (type == 1) DataUpdater.bedtimeNotification(ctx);
+        if (type == 1) DataUpdater.bedtimeNotification(ctx, i.getDoubleExtra("bedtime", 21.0));
         if (type == 2) DataUpdater.waketimeNotification(ctx);
 
         // I might move all of the functions to Globe.. we'll see
@@ -72,8 +72,9 @@ public class DataUpdater extends BroadcastReceiver {
         thread.start();
     }
 
-    private static void bedtimeNotification(Context ctx) {
+    private static void bedtimeNotification(Context ctx, double bedtime) {
         if (Globe.DEBUG) Log.d(TAG, "Bedtime notification service started.");
+        String time = Globe.timeToString(bedtime);
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm != null) {
             PendingIntent pi = PendingIntent.getActivity(ctx, 3, new Intent(ctx, Launcher.class), 0);
@@ -82,11 +83,11 @@ public class DataUpdater extends BroadcastReceiver {
 
             b.setTicker("Bedtime Soon!");
             b.setContentTitle("Bedtime Soon!");
-            b.setContentText("Looks like it's almost your bedtime! Start getting ready for bed soon!");
+            b.setContentText("Your bedtime is at " + time + "! Start getting ready for bed soon!");
             b.setSmallIcon(R.mipmap.ic_launcher);
             b.setContentIntent(pi);
             // big style
-            b.setStyle(new NotificationCompat.BigTextStyle().bigText("Looks like it's almost your bedtime! Start getting ready for bed soon!"));
+            b.setStyle(new NotificationCompat.BigTextStyle().bigText("Your bedtime is at " + time + "! Start getting ready for bed soon!"));
 
             Notification n = b.build();
 

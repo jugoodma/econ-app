@@ -59,8 +59,8 @@ class Globe {
     private static final String TAG = "Globe";
 
     private static final String FILENAME = "scr_data";
+    private static final String client_secret = "ce339199861149c3dccf9a52f4e27623";
     static final String client_id = "228Q8G";
-    // *** client secret is below (only ever used here)
     static final String callback_uri = "scr://callback";
     static final String FITBIT_AUTH_URL = "https://api.fitbit.com/oauth2/token";
     static final String DOMAIN = "@sleep-coffee-research.firebaseapp.com";
@@ -142,7 +142,6 @@ class Globe {
     static String getB64() {
         String result = "";
         try {
-            String client_secret = "ce339199861149c3dccf9a52f4e27623"; // *** client secret
             result = Base64.encodeToString((client_id + ":" + client_secret).getBytes("UTF-8"), Base64.DEFAULT);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();

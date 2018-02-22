@@ -29,7 +29,7 @@ public class BootUpdater extends BroadcastReceiver {
                 @Override
                 public void onDataChange(DataSnapshot d) {
                     // need Globe.stage
-                    Globe.stage = Globe.parseLong(d.getValue()); // default 0
+                    Globe.stage = Globe.parseLong(d.getValue(), 0);
 
                     // now set the other variables
                     Globe.dbRef.child(Globe.user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {

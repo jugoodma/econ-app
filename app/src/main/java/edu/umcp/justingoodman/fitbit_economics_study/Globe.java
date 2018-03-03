@@ -180,7 +180,6 @@ class Globe {
             } else if (type == 1) {
                 Intent iNS = new Intent(ctx, DataUpdater.class);
                 iNS.putExtra("type", 1); // 1 = bedtime notification
-                iNS.putExtra("bedtime", Globe.bedTime);
                 Globe.senderNS = PendingIntent.getBroadcast(ctx, 1, iNS, 0);
                 // calculate bedtime notification
                 double bedtime = Globe.bedTime;

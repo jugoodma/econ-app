@@ -42,7 +42,7 @@ public class DataUpdater extends BroadcastReceiver {
         if (Globe.DEBUG) Log.d(TAG, "Type is " + type);
 
         if (type == 0) DataUpdater.collectFitbitData(ctx);
-        if (type == 1) DataUpdater.bedtimeNotification(ctx, i.getDoubleExtra("bedtime", 21.0));
+        if (type == 1) DataUpdater.bedtimeNotification(ctx);
         if (type == 2) DataUpdater.waketimeNotification(ctx);
 
         // I might move all of the functions to Globe.. we'll see
@@ -72,29 +72,48 @@ public class DataUpdater extends BroadcastReceiver {
         thread.start();
     }
 
-    private static void bedtimeNotification(Context ctx, double bedtime) {
+    private static void bedtimeNotification(final Context ctx) {
         if (Globe.DEBUG) Log.d(TAG, "Bedtime notification service started.");
-        String time = Globe.timeToString(bedtime);
-        NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm != null) {
-            PendingIntent pi = PendingIntent.getActivity(ctx, 3, new Intent(ctx, Launcher.class), 0);
+        // check if it's sunday-thursday evenings (DEPENDENT ON CURRENT TIME)
+        int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
+        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        if ((hour < 12 && day != Calendar.SATURDAY && day != Calendar.SUNDAY) || (hour >= 12 && day != Calendar.FRIDAY && day != Calendar.SATURDAY)) {
+            final NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) {
+                Globe.init(ctx);
+                // gotta make sure the bedtime is correct!
+                // if this is called, then it's likely that the user is part of stage 1
+                Globe.dbRef.child(Globe.user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot d) {
+                        String time = Globe.timeToString(Globe.parseDouble(d.child("bedtime"), 23.0));
+                        PendingIntent pi = PendingIntent.getActivity(ctx, 3, new Intent(ctx, Launcher.class), 0);
 
-            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
+                        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
 
-            b.setTicker("Bedtime Soon!");
-            b.setContentTitle("Bedtime Soon!");
-            b.setContentText("Your bedtime is at " + time + "! Start getting ready for bed soon!");
-            b.setSmallIcon(R.mipmap.ic_launcher);
-            b.setContentIntent(pi);
-            // big style
-            b.setStyle(new NotificationCompat.BigTextStyle().bigText("Your bedtime is at " + time + "! Start getting ready for bed soon!"));
+                        b.setTicker("Bedtime Soon!");
+                        b.setContentTitle("Bedtime Soon!");
+                        b.setContentText("Your bedtime is at " + time + "! Start getting ready for bed soon!");
+                        b.setSmallIcon(R.mipmap.ic_launcher);
+                        b.setContentIntent(pi);
+                        // big style
+                        b.setStyle(new NotificationCompat.BigTextStyle().bigText("Your bedtime is at " + time + "! Start getting ready for bed soon!"));
 
-            Notification n = b.build();
+                        Notification n = b.build();
 
-            // create the notification
-            // n.vibrate = new long[]{150, 300, 150, 400};
-            n.flags = Notification.FLAG_AUTO_CANCEL;
-            nm.notify(R.mipmap.ic_launcher, n);
+                        // create the notification
+                        // n.vibrate = new long[]{150, 300, 150, 400};
+                        n.flags = Notification.FLAG_AUTO_CANCEL;
+                        nm.notify(R.mipmap.ic_launcher, n);
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError e) {
+                        // fuck
+                        if (Globe.DEBUG) Log.d(TAG, "Failed to read value.", e.toException());
+                    }
+                });
+            }
         }
     }
 

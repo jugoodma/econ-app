@@ -183,7 +183,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         } else if (i == R.id.rewards_home) {
             // TODO: schedule a handler for this
             int day = c.get(Calendar.DAY_OF_WEEK); // cannot redeem on saturday or sunday, or before 7:30am
-            if (day == Calendar.FRIDAY || day == Calendar.SATURDAY)
+            if (day == Calendar.SATURDAY || day == Calendar.SUNDAY)
                 Toast.makeText(Home.this, "No coupons on Saturday or Sunday", Toast.LENGTH_SHORT).show();
             else if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) < 7.5)
                 Toast.makeText(Home.this, "It's before 7:30AM!", Toast.LENGTH_SHORT).show();

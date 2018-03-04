@@ -52,6 +52,14 @@ import static android.content.Context.ALARM_SERVICE;
  * Class holds global variables and functions needed through all parts of the app
  * Think of this as the app library
  *
+ * PENDING-INTENT REQUEST CODES
+ * 0 - fitbit updater, broadcast
+ * 1 - bedtime notification, broadcast
+ * 2 - redeem notification, broadcast
+ * 3 - morning sleep check, broadcast
+ * 4 - bedtime notification, activity
+ * 5 - waketime notification, activity
+ * 6 - morning sleep check, activity
  * **/
 class Globe {
 
@@ -82,6 +90,7 @@ class Globe {
     static PendingIntent senderFB; // for FitBit service
     static PendingIntent senderNS; // for bedtime notification service
     static PendingIntent senderRD; // for wakeup redeem notification
+    static PendingIntent senderMN; // for morning sleep checking
 
     public static final boolean DEBUG = false; // set to false in production
 
@@ -203,6 +212,14 @@ class Globe {
                 c.set(Calendar.MINUTE, 30);
                 // start at 7:30am, 1 day interval (does not need to be exact)
                 Globe.am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_DAY, Globe.senderRD);
+            } else if (type == 3) {
+                Intent iMN = new Intent(ctx, DataUpdater.class);
+                iMN.putExtra("type", 3);
+                Globe.senderMN = PendingIntent.getBroadcast(ctx, 3, iMN, 0);
+                // no need to edit the calendar, I think...
+                // can't set inexact repeating because this is every 5 minutes :(
+                // start now, 5 minute interval
+                Globe.am.setRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), 5 * 60 * 1000, Globe.senderMN);
             }
         }
     }

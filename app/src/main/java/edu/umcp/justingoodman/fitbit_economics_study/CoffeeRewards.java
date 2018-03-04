@@ -281,12 +281,12 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
                     result += Integer.parseInt(s.substring(14, 16)) / 60f;
                 }
             } catch (Exception e) {
-                // if this fails I still want ot run the second part
+                // if this fails I still want to run the second part
                 e.printStackTrace();
             }
             // sleep length
             try {
-                length = Globe.parseLong(t.getResult().child(today).child("minutesAsleep").getValue(), 300); // default is something greater than the min requirement
+                length = Globe.parseLong(t.getResult().child(today).child("minutesAsleep").getValue(), 300); // default is something less than the min requirement
                 if (Globe.DEBUG) Log.d(TAG, "minutesAsleep " + length);
 
             } catch (Exception e) {

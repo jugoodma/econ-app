@@ -71,7 +71,7 @@ public class DataUpdater extends BroadcastReceiver {
         if (hour == 5 && day != Calendar.SATURDAY && day != Calendar.SUNDAY) {
             // should happen at 5:55am
             Globe.scheduleAlarm(ctx, 3);
-        } else if (hour >= 9 && Globe.am != null && Globe.senderMN != null) {
+        } else if ((hour <= 4 || hour >= 9) && Globe.am != null && Globe.senderMN != null) {
             // should happen at 9:55am
             Globe.am.cancel(Globe.senderMN);
         }
@@ -227,120 +227,131 @@ public class DataUpdater extends BroadcastReceiver {
         // - check for sleep
         // - if there's sleep, send a notification and cancel the alarm
         // - else, do nothing and wait for the next 5-min cycle
-        NetworkManager.getInstance(ctx); // no illegal-state
-        Globe.init(ctx);
 
-        // Set up Authorization
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Authorization", Globe.token_type + " " + Globe.access_token);
+        int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
+        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        // one last check just to be sure...
+        if (day != Calendar.SATURDAY && day != Calendar.SUNDAY && hour >= 5 && hour < 10) {
+            NetworkManager.getInstance(ctx); // no illegal-state
+            Globe.init(ctx);
 
-        // the "dateOfSleep" returned from this will be the day the user woke up (I HOPE), which is today
-        String FITBIT_SLEEP_URL = "https://api.fitbit.com/1.2/user/-/sleep/date/" + new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().getTime()) + ".json";
+            // Set up Authorization
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Authorization", Globe.token_type + " " + Globe.access_token);
 
-        // do the rest of the work in here
-        NetworkManager.getInstance().makeRequest(ctx, Request.Method.GET, headers, null, FITBIT_SLEEP_URL, new CustomListener<String>() {
-            @Override
-            public void getResult(String result) {
-                if (Globe.DEBUG) Log.d(TAG, "checking for sleep...");
-                if (!result.isEmpty()) {
-                    if (Globe.DEBUG) Log.d(TAG, "Here's the result - " + result);
-                    String message = "Sync your Fitbit to see if you’ve earned free coffee.";
-                    // now for a big try/catch
-                    try {
-                        JSONObject j = new JSONObject(result);
-                        JSONArray test = ((JSONObject) (((JSONObject) j.getJSONArray("sleep").get(0)).get("levels"))).getJSONArray("data");
-                        // test cheating
-                        if (test.length() > 1) {
-                            // probably not cheating
-                            if (Globe.parseLong(((JSONObject) j.get("summary")).get("totalMinutesAsleep"), 300) >= Globe.minSleep) {
-                                // they slept long enough
-                                // get the user's bedtime
-                                double bedtime = 23.9;
-                                double starttime = 0.0;
-                                double waketime = 10.0;
-                                final TaskCompletionSource<DataSnapshot> tcs = new TaskCompletionSource<>();
-                                final Task<DataSnapshot> t = tcs.getTask();
-                                Globe.dbRef.child(Globe.user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(DataSnapshot dataSnapshot) { tcs.setResult(dataSnapshot); }
-                                    @Override
-                                    public void onCancelled(DatabaseError error) { tcs.setException(error.toException()); }
-                                });
-                                try {
-                                    if (Globe.DEBUG) Log.d(TAG, "Waiting for bedtime");
-                                    Tasks.await(t, 15, TimeUnit.SECONDS);
-                                    if (Globe.DEBUG) Log.d(TAG, "Bedtime found");
-                                    bedtime = Globe.parseDouble(t.getResult().child("bedtime").getValue(), 23.9);
-                                    waketime = Globe.parseDouble(t.getResult().child("waketime").getValue(), 10.0);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } catch (ExecutionException e) {
-                                    if (Globe.DEBUG) Log.d(TAG, "Failed to read value.");
-                                    e.printStackTrace();
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
+            // the "dateOfSleep" returned from this will be the day the user woke up (I HOPE), which is today
+            String FITBIT_SLEEP_URL = "https://api.fitbit.com/1.2/user/-/sleep/date/" + new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().getTime()) + ".json";
 
-                                // get the sleep start time
-                                String s = (String) ((JSONObject) j.getJSONArray("sleep").get(0)).get("startTime");
-                                starttime += Integer.parseInt(s.substring(11, 13));
-                                starttime += Integer.parseInt(s.substring(14, 16)) / 60f;
+            // do the rest of the work in here
+            NetworkManager.getInstance().makeRequest(ctx, Request.Method.GET, headers, null, FITBIT_SLEEP_URL, new CustomListener<String>() {
+                @Override
+                public void getResult(String result) {
+                    if (Globe.DEBUG) Log.d(TAG, "checking for sleep...");
+                    if (!result.isEmpty()) {
+                        if (Globe.DEBUG) Log.d(TAG, "Here's the result - " + result);
+                        String message = "Sync your Fitbit to see if you’ve earned free coffee.";
+                        // now for a big try/catch
+                        try {
+                            JSONObject j = new JSONObject(result);
+                            JSONArray test = ((JSONObject) (((JSONObject) j.getJSONArray("sleep").get(0)).get("levels"))).getJSONArray("data");
+                            // test cheating
+                            if (test.length() > 1) {
+                                // probably not cheating
+                                if (Globe.parseLong(((JSONObject) j.get("summary")).get("totalMinutesAsleep"), 300) >= Globe.minSleep) {
+                                    // they slept long enough
+                                    // get the user's bedtime
+                                    double bedtime = 23.9;
+                                    double starttime = 0.0;
+                                    double waketime = 10.0;
+                                    final TaskCompletionSource<DataSnapshot> tcs = new TaskCompletionSource<>();
+                                    final Task<DataSnapshot> t = tcs.getTask();
+                                    Globe.dbRef.child(Globe.user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot dataSnapshot) {
+                                            tcs.setResult(dataSnapshot);
+                                        }
 
-                                // check bedtime
-                                if (starttime < 12 && bedtime >= 12) // did not press it in time
-                                    starttime += 24f;
-                                else if (starttime >= 12 && bedtime < 12) // did press in time
-                                    starttime -= 24f;
-                                if (starttime <= bedtime + (5 / 60f)) {
-                                    // they earned a coupon
-                                    message = "You’ve earned free coffee! Redeem by " + Globe.timeToString(waketime) + ".";
+                                        @Override
+                                        public void onCancelled(DatabaseError error) {
+                                            tcs.setException(error.toException());
+                                        }
+                                    });
+                                    try {
+                                        if (Globe.DEBUG) Log.d(TAG, "Waiting for bedtime");
+                                        Tasks.await(t, 15, TimeUnit.SECONDS);
+                                        if (Globe.DEBUG) Log.d(TAG, "Bedtime found");
+                                        bedtime = Globe.parseDouble(t.getResult().child("bedtime").getValue(), 23.9);
+                                        waketime = Globe.parseDouble(t.getResult().child("waketime").getValue(), 10.0);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    } catch (ExecutionException e) {
+                                        if (Globe.DEBUG) Log.d(TAG, "Failed to read value.");
+                                        e.printStackTrace();
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+
+                                    // get the sleep start time
+                                    String s = (String) ((JSONObject) j.getJSONArray("sleep").get(0)).get("startTime");
+                                    starttime += Integer.parseInt(s.substring(11, 13));
+                                    starttime += Integer.parseInt(s.substring(14, 16)) / 60f;
+
+                                    // check bedtime
+                                    if (starttime < 12 && bedtime >= 12) // did not press it in time
+                                        starttime += 24f;
+                                    else if (starttime >= 12 && bedtime < 12) // did press in time
+                                        starttime -= 24f;
+                                    if (starttime <= bedtime + (5 / 60f)) {
+                                        // they earned a coupon
+                                        message = "You’ve earned free coffee! Redeem by " + Globe.timeToString(waketime) + ".";
+                                    } else {
+                                        // did not get to bed in time
+                                        message = "You missed your goal bedtime. Get to bed on time tonight to earn your reward.";
+                                    }
                                 } else {
-                                    // did not get to bed in time
-                                    message = "You missed your goal bedtime. Get to bed on time tonight to earn your reward.";
+                                    // coupon not earned because they did not sleep 7 hrs
+                                    message = "You did not sleep long enough. Sleep at least seven hours tonight to earn your reward.";
                                 }
                             } else {
-                                // coupon not earned because they did not sleep 7 hrs
-                                message = "You did not sleep long enough. Sleep at least seven hours tonight to earn your reward.";
+                                // probably cheating
+                                message = "You manually input sleep data. Please let the device determine your bedtime and sleep duration to earn your reward.";
                             }
-                        } else {
-                            // probably cheating
-                            message = "You manually input sleep data. Please let the device determine your bedtime and sleep duration to earn your reward.";
+
+                            // we made it here, hence there was sleep, so cancel the alarm
+                            if (Globe.am != null && Globe.senderMN != null)
+                                Globe.am.cancel(Globe.senderMN);
+                        } catch (Exception e) {
+                            // no sleep, better luck next time
+                            e.printStackTrace();
                         }
 
-                        // we made it here, hence there was sleep, so cancel the alarm
-                        if (Globe.am != null && Globe.senderMN != null)
-                            Globe.am.cancel(Globe.senderMN);
-                    } catch (Exception e) {
-                        // no sleep, better luck next time
-                        e.printStackTrace();
+                        // send notification
+                        NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+                        if (nm != null) {
+                            PendingIntent pi = PendingIntent.getActivity(ctx, 6, new Intent(ctx, Launcher.class), 0);
+
+                            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
+
+                            b.setTicker("Good Morning!");
+                            b.setContentTitle("Good Morning!");
+                            b.setContentText(message);
+                            b.setSmallIcon(R.mipmap.ic_launcher);
+                            b.setContentIntent(pi);
+                            // big style
+                            b.setStyle(new NotificationCompat.BigTextStyle().bigText(message));
+
+                            Notification n = b.build();
+
+                            // create the notification
+                            // n.vibrate = new long[]{150, 300, 150, 400};
+                            n.flags = Notification.FLAG_AUTO_CANCEL;
+                            nm.notify(R.mipmap.ic_launcher, n);
+                        }
+
+                        // done
                     }
-
-                    // send notification
-                    NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-                    if (nm != null) {
-                        PendingIntent pi = PendingIntent.getActivity(ctx, 6, new Intent(ctx, Launcher.class), 0);
-
-                        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
-
-                        b.setTicker("Good Morning!");
-                        b.setContentTitle("Good Morning!");
-                        b.setContentText(message);
-                        b.setSmallIcon(R.mipmap.ic_launcher);
-                        b.setContentIntent(pi);
-                        // big style
-                        b.setStyle(new NotificationCompat.BigTextStyle().bigText(message));
-
-                        Notification n = b.build();
-
-                        // create the notification
-                        // n.vibrate = new long[]{150, 300, 150, 400};
-                        n.flags = Notification.FLAG_AUTO_CANCEL;
-                        nm.notify(R.mipmap.ic_launcher, n);
-                    }
-
-                    // done
                 }
-            }
-        });
+            });
+        }
     }
 }

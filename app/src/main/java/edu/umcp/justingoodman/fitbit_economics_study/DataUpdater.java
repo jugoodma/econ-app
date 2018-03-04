@@ -65,15 +65,12 @@ public class DataUpdater extends BroadcastReceiver {
         // check for morning notifications
         int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        if (day != Calendar.SATURDAY && day != Calendar.SUNDAY) {
-            if (hour == 5) {
-                // should happen at 5:55am
-                Globe.scheduleAlarm(ctx, 3);
-            } else if (hour >= 9) {
-                // should happen at 9:55am
-                if (Globe.am != null && Globe.senderMN != null)
-                    Globe.am.cancel(Globe.senderMN);
-            }
+        if (hour == 5 && day != Calendar.SATURDAY && day != Calendar.SUNDAY) {
+            // should happen at 5:55am
+            Globe.scheduleAlarm(ctx, 3);
+        } else if (hour >= 9 && Globe.am != null && Globe.senderMN != null) {
+            // should happen at 9:55am
+            Globe.am.cancel(Globe.senderMN);
         }
 
         // Refresh token & update data
@@ -227,6 +224,7 @@ public class DataUpdater extends BroadcastReceiver {
         // - check for sleep
         // - if there's sleep, send a notification and cancel the alarm
         // - else, do nothing and wait for the next 5-min cycle
+        NetworkManager.getInstance(ctx); // no illegal-state
         Globe.init(ctx);
 
         // Set up Authorization

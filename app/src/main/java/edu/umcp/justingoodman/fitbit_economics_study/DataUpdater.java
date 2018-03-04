@@ -65,6 +65,9 @@ public class DataUpdater extends BroadcastReceiver {
         // check for morning notifications
         int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        Intent iMN = new Intent(ctx, DataUpdater.class);
+        iMN.putExtra("type", 3);
+        Globe.senderMN = PendingIntent.getBroadcast(ctx, 3, iMN, 0);
         if (hour == 5 && day != Calendar.SATURDAY && day != Calendar.SUNDAY) {
             // should happen at 5:55am
             Globe.scheduleAlarm(ctx, 3);

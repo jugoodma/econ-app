@@ -153,7 +153,7 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
         // _heart
         nUser.put("bedtime", "x"); // 'x' = first stage
         nUser.put("group", 0); // 0 = control group
-        nUser.put("notification", 1); // hours before bedtime
+        nUser.put("notification", 0.5); // hours before bedtime
         nUser.put("waketime", 10.0001);
         nUser.put("updated", "---");
         nUser.put("id", email.getText().toString()); // should be an email W/O the @sleep-coffee-research.firebaseapp.com part

@@ -2,127 +2,96 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/ConstraintLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="edu.umcp.justingoodman.fitbit_economics_study.CoffeeRewards">
 
-    <TextView
-        android:id="@+id/title_coffee"
+    <ImageView
+        android:id="@+id/enjoy_coffee"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="24dp"
-        android:text="@string/coupon"
-        android:textAlignment="center"
-        android:textColor="@color/colorAccent"
-        android:textSize="24sp"
-        android:textStyle="italic"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/time_coffee"
-        android:layout_width="300dp"
-        android:layout_height="65dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:text="@string/redeemTime"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        android:textSize="20sp"
+        android:contentDescription="@string/coupon_desc"
+        android:tint="@android:color/transparent"
         app:layout_constraintBottom_toTopOf="@+id/text_coffee"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/title_coffee" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/enjoy" />
 
     <TextView
         android:id="@+id/text_coffee"
-        android:layout_width="300dp"
-        android:layout_height="200dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:layout_marginTop="8dp"
-        android:background="@android:color/transparent"
+        android:layout_width="290dp"
+        android:layout_height="175dp"
+        android:background="@color/grayOut"
+        android:gravity="center_vertical"
         android:text="@string/syncFitbit"
         android:textAlignment="center"
-        android:textColor="@android:color/white"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@+id/enjoy_coffee"
+        app:layout_constraintTop_toBottomOf="@+id/enjoy_coffee" />
+
+    <TextView
+        android:id="@+id/block_coffee"
+        android:layout_width="78dp"
+        android:layout_height="175dp"
+        android:background="@color/grayOut"
+        app:layout_constraintEnd_toEndOf="@+id/enjoy_coffee"
+        app:layout_constraintStart_toEndOf="@+id/text_coffee"
+        app:layout_constraintTop_toBottomOf="@+id/enjoy_coffee" />
 
     <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="96dp"
-        android:layout_height="83dp"
+        android:id="@+id/einstein_coffee"
+        android:layout_width="69dp"
+        android:layout_height="69dp"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:background="@android:color/transparent"
         android:contentDescription="@string/einstein_desc"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_coffee"
-        app:srcCompat="@drawable/einstein" />
-
-    <Button
-        android:id="@+id/cancel_coffee"
-        android:layout_width="140dp"
-        android:layout_height="60dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="8dp"
-        android:text="@string/cancel"
-        android:visibility="visible"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_coffee"
-        android:layout_marginLeft="10dp" />
+        app:layout_constraintBottom_toBottomOf="@+id/block_coffee"
+        app:layout_constraintEnd_toEndOf="@+id/block_coffee"
+        app:layout_constraintTop_toTopOf="@+id/block_coffee"
+        app:srcCompat="@drawable/einstein"
+        android:layout_marginRight="8dp" />
 
     <Button
         android:id="@+id/redeem_coffee"
-        android:layout_width="140dp"
+        android:layout_width="210dp"
         android:layout_height="60dp"
-        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
         android:background="@android:color/holo_orange_dark"
         android:text="@string/redeem"
+        android:textSize="12sp"
         android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/cancel_coffee"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/text_coffee"
+        android:layout_marginRight="8dp"
+        android:layout_marginLeft="16dp" />
+
+    <Button
+        android:id="@+id/cancel_coffee"
+        android:layout_width="120dp"
+        android:layout_height="60dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/back"
+        android:textSize="12sp"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/text_coffee"
-        android:layout_marginRight="10dp" />
-
-    <ImageView
-        android:id="@+id/left_coffee"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:background="@android:color/transparent"
-        android:contentDescription="@string/coupon_desc"
-        app:layout_constraintEnd_toStartOf="@+id/title_coffee"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@mipmap/coffee_foreground"
-        android:layout_marginRight="8dp" />
-
-    <ImageView
-        android:id="@+id/right_coffee"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:background="@android:color/transparent"
-        android:contentDescription="@string/coupon_desc"
-        app:layout_constraintStart_toEndOf="@+id/title_coffee"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@mipmap/coffee_foreground"
-        android:layout_marginLeft="8dp" />
+        android:layout_marginRight="16dp" />
 
     <ProgressBar
         android:id="@+id/progressbar"

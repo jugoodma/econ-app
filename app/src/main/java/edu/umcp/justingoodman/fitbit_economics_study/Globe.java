@@ -214,7 +214,7 @@ class Globe {
                 Globe.am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_DAY, Globe.senderRD);
             } else if (type == 3) {
                 Intent iMN = new Intent(ctx, DataUpdater.class);
-                iMN.putExtra("type", 3);
+                iMN.putExtra("type", 3); // 3 - waketime sleep check
                 Globe.senderMN = PendingIntent.getBroadcast(ctx, 3, iMN, 0);
                 // no need to edit the calendar, I think...
                 // can't set inexact repeating because this is every 5 minutes :(
@@ -647,32 +647,35 @@ class Globe {
             c.add(Calendar.DATE, -1);
         }
 
-        try {
-            Tasks.await(t1);
-            Tasks.await(t2);
+        if (Globe.DEBUG) {
+            // turn off the Toast "updated fitbit" in production
+            try {
+                Tasks.await(t1);
+                Tasks.await(t2);
 
-            Handler h = new Handler(ctx.getMainLooper());
-            if (t1.getResult() && t2.getResult()) {
-                if (Globe.DEBUG) Log.d(TAG, "Success!!");
-                h.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(ctx, "Successfully captured FitBit data.", Toast.LENGTH_LONG).show();
-                    }
-                });
-            } else {
-                if (Globe.DEBUG) Log.d(TAG, "Fail!!");
-                h.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(ctx, "Something went wrong in capturing FitBit data.", Toast.LENGTH_SHORT).show();
-                    }
-                });
+                Handler h = new Handler(ctx.getMainLooper());
+                if (t1.getResult() && t2.getResult()) {
+                    if (Globe.DEBUG) Log.d(TAG, "Success!!");
+                    h.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(ctx, "Successfully captured FitBit data.", Toast.LENGTH_LONG).show();
+                        }
+                    });
+                } else {
+                    if (Globe.DEBUG) Log.d(TAG, "Fail!!");
+                    h.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(ctx, "Something went wrong in capturing FitBit data.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
         }
 
         // set updated time to now

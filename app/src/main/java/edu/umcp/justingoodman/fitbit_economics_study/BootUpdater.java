@@ -36,9 +36,9 @@ public class BootUpdater extends BroadcastReceiver {
                         @Override
                         public void onDataChange(DataSnapshot d) {
                             // set globals
-                            Globe.bedTime = Globe.parseDouble(d.child("bedtime"), 22.0);
-                            Globe.notification = Globe.parseDouble(d.child("notification"), 0.5);
-                            Globe.wakeTime = Globe.parseDouble(d.child("waketime"), 10.0);
+                            Globe.bedTime = Globe.parseDouble(d.child("bedtime").getValue(), 22.0);
+                            Globe.notification = Globe.parseDouble(d.child("notification").getValue(), 0.5);
+                            Globe.wakeTime = Globe.parseDouble(d.child("waketime").getValue(), 10.0);
 
                             // schedule fitbit
                             Globe.scheduleAlarm(ctx, 0); // fitbit updater

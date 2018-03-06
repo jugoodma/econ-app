@@ -29,9 +29,10 @@
     <string name="coupon_desc">Cup of Coffee</string>
     <string name="einstein_desc">Einstein Bro\'s Bagels and Coffee</string>
     <string name="redeemTime">Expires %1$s at %2$s</string>
-    <string name="redeem">Redeem Your FREE Coffee!</string>
+    <string name="redeem">Click here to Redeem Coffee</string>
     <string name="cancel">Cancel</string>
-    <string name="valid">%1$s\nShow the cashier your phone and have them press the button below to redeem your free cup of coffee. Coupon is valid for any single coffee drink up to $4.25. Can only be used once.</string>
+    <string name="back">Click here to Go Back</string>
+    <string name="valid">%1$s\nGood job meeting your sleep goal!\n\nRedeem your FANCY COFFEE* BEFORE %2$s today at an Einstein Bros Bagel location. Show the cashier your phone and have them press the button below to redeem your free cup of coffee.\n*Purchasable value for up to a $4.25 specialty coffee drink.</string>
     <string name="invalidCoffee">Sorry, you didn\'t reach your goal bedtime!</string>
     <string name="syncFitbit">You need to sync your Fitbit!</string>
     <!-- <string name="noBedButton">You did not press the \"in bed\" button!</string> -->

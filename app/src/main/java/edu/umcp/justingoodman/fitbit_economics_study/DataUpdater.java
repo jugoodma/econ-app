@@ -107,7 +107,7 @@ public class DataUpdater extends BroadcastReceiver {
                 Globe.dbRef.child(Globe.user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot d) {
-                        String time = Globe.timeToString(Globe.parseDouble(d.child("bedtime"), 23.0));
+                        String time = Globe.timeToString(Globe.parseDouble(d.child("bedtime").getValue(), 23.0));
                         PendingIntent pi = PendingIntent.getActivity(ctx, 4, new Intent(ctx, Launcher.class), 0);
 
                         NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
@@ -115,6 +115,7 @@ public class DataUpdater extends BroadcastReceiver {
                         b.setTicker("Bedtime Soon!");
                         b.setContentTitle("Bedtime Soon!");
                         b.setContentText("Your bedtime is at " + time + "! Start getting ready for bed soon!");
+                        if (Globe.DEBUG) Log.d(TAG, "Your bedtime is at " + time + "! Start getting ready for bed soon!");
                         b.setSmallIcon(R.mipmap.ic_launcher);
                         b.setContentIntent(pi);
                         // big style
@@ -138,73 +139,63 @@ public class DataUpdater extends BroadcastReceiver {
         }
     }
 
-    private static void waketimeNotification(Context ctx) {
+    private static void waketimeNotification(final Context ctx) {
+        // somehow eventually a picture should display in the notification if they earned a coupon fuck my life
         if (Globe.DEBUG) Log.d(TAG, "Waketime notification service started.");
         // we want to actually figure out if they earned the coupon -- realistically,
         // FitBit probably has not figured out the user's sleep yet... wtf
-        NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         // later - set actual redemption time, and do a *quick* check of validity
+        final Calendar c = Calendar.getInstance();
+        c.setTimeInMillis(System.currentTimeMillis());
         int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
         // no point in sending notification on sat/sun
         if (!(day == Calendar.SATURDAY || day == Calendar.SUNDAY)) {
             // now test the user's sleep data, and see if they MIGHT earn a coffee
             Globe.init(ctx);
-            Calendar c = Calendar.getInstance();
-            c.setTimeInMillis(System.currentTimeMillis());
-            String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(c.getTime());
-            double time = -1.0; // get the sleep start time
-            boolean flag = false;
-            String message = "Sync your FitBit to find out if you earned a free coffee!";
-            final TaskCompletionSource<DataSnapshot> tcs = new TaskCompletionSource<>();
-            final Task<DataSnapshot> t = tcs.getTask();
             Globe.dbRef.child(Globe.user.getUid()).child("_sleep").addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
-                public void onDataChange(DataSnapshot dataSnapshot) { tcs.setResult(dataSnapshot); }
-                @Override
-                public void onCancelled(DatabaseError error) { tcs.setException(error.toException()); }
-            });
-            try {
-                Tasks.await(t, 15, TimeUnit.SECONDS);
-                String s = (String) t.getResult().child(today).child("startTime").getValue();
-                if (Globe.DEBUG) Log.d(TAG, "startTime " + s);
-                if (s != null) {
-                    time += Integer.parseInt(s.substring(11, 13));
-                    time += Integer.parseInt(s.substring(14, 16)) / 60f;
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+                    String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(c.getTime());
+                    double time = -1.0; // get the sleep start time
+                    boolean flag = false;
+                    String message = "Sync your FitBit to find out if you earned a free coffee.";
+                    String s = (String) dataSnapshot.child(today).child("startTime").getValue();
+                    if (Globe.DEBUG) Log.d(TAG, "startTime " + s);
+                    if (s != null) {
+                        time += Integer.parseInt(s.substring(11, 13));
+                        time += Integer.parseInt(s.substring(14, 16)) / 60f;
+                    }
+                    if (time > -1) { // java simplified this for me, hopefully it works lol
+                        flag = !(time < 12 && Globe.bedTime >= 12) && (time >= 12 && Globe.bedTime < 12 || time <= Globe.wakeTime + (5 / 60f));
+                        if (flag)
+                            message = "You may have earned a free coffee, nice!";
+                    }
+                    if (nm != null && flag) {
+                        PendingIntent pi = PendingIntent.getActivity(ctx, 5, new Intent(ctx, Launcher.class), 0);
+
+                        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
+
+                        b.setTicker("Coffee Coupon");
+                        b.setContentTitle("Coffee Coupon");
+                        b.setContentText(message);
+                        b.setSmallIcon(R.mipmap.ic_launcher);
+                        b.setContentIntent(pi);
+                        // big style
+                        b.setStyle(new NotificationCompat.BigTextStyle().bigText(message));
+
+                        Notification n = b.build();
+
+                        // create the notification
+                        // n.vibrate = new long[]{150, 300, 150, 400};
+                        n.flags = Notification.FLAG_AUTO_CANCEL;
+                        nm.notify(R.mipmap.ic_launcher, n);
+                    }
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                if (Globe.DEBUG) Log.d(TAG, "Failed to read value.");
-                flag = true;
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            if (!flag && time > -1) { // java simplified this for me, hopefully it works lol
-                flag = !(time < 12 && Globe.bedTime >= 12) && (time >= 12 && Globe.bedTime < 12 || time <= Globe.wakeTime + (5 / 60f));
-                if (flag)
-                    message = "You may have earned a free coffee, nice!";
-            }
-            if (nm != null && flag) {
-                PendingIntent pi = PendingIntent.getActivity(ctx, 5, new Intent(ctx, Launcher.class), 0);
 
-                NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, "Economics");
-
-                b.setTicker("Coffee Coupon");
-                b.setContentTitle("Coffee Coupon");
-                b.setContentText(message);
-                b.setSmallIcon(R.mipmap.ic_launcher);
-                b.setContentIntent(pi);
-                // big style
-                b.setStyle(new NotificationCompat.BigTextStyle().bigText(message));
-
-                Notification n = b.build();
-
-                // create the notification
-                // n.vibrate = new long[]{150, 300, 150, 400};
-                n.flags = Notification.FLAG_AUTO_CANCEL;
-                nm.notify(R.mipmap.ic_launcher, n);
-            }
+                @Override
+                public void onCancelled(DatabaseError error) { error.toException().printStackTrace(); }
+            });
         }
     }
 

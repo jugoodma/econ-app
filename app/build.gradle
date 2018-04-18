@@ -5,13 +5,13 @@ android {
         config
     }
     compileSdkVersion 27
-    buildToolsVersion '26.0.2'
+    buildToolsVersion '27.0.3'
     defaultConfig {
         applicationId "edu.ucsd.justingoodman.sleep_coffee_research"
         minSdkVersion 15
         targetSdkVersion 27
-        versionCode 47
-        versionName "1.2.4"
+        versionCode 53
+        versionName "1.2.7"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -48,24 +48,24 @@ if (propFile.canRead()) {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:appcompat-v7:27.0.2'
-    compile 'com.android.support:design:27.0.2'
-    compile 'com.android.support.constraint:constraint-layout:1.0.2'
-    compile 'com.google.firebase:firebase-auth:11.8.0'
-    compile 'com.google.firebase:firebase-database:11.8.0'
-    compile 'com.firebase:firebase-jobdispatcher:0.8.4'
-    compile 'com.android.support:support-compat:27.0.2'
-    compile 'com.android.support:support-core-utils:27.0.2'
-    compile 'com.android.support:support-core-ui:27.0.2'
-    compile 'com.android.support:support-media-compat:27.0.2'
-    compile 'com.android.support:support-fragment:27.0.2'
-    compile 'com.android.support:customtabs:27.0.2'
-    compile 'com.android.volley:volley:1.0.0'
-    testCompile 'junit:junit:4.12'
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support:design:27.1.1'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+    implementation 'com.google.firebase:firebase-auth:15.0.0'
+    implementation 'com.google.firebase:firebase-database:15.0.0'
+    implementation 'com.firebase:firebase-jobdispatcher:0.8.4'
+    implementation 'com.android.support:support-compat:27.1.1'
+    implementation 'com.android.support:support-core-utils:27.1.1'
+    implementation 'com.android.support:support-core-ui:27.1.1'
+    implementation 'com.android.support:support-media-compat:27.1.1'
+    implementation 'com.android.support:support-fragment:27.1.1'
+    implementation 'com.android.support:customtabs:27.1.1'
+    implementation 'com.android.volley:volley:1.0.0'
+    testImplementation 'junit:junit:4.12'
 }
 
 apply plugin: 'com.google.gms.google-services'

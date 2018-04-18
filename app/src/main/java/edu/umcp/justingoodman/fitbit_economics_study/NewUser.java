@@ -14,7 +14,10 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -35,7 +38,7 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
     private EditText code;
     private ProgressBar p;
 
-    private Runnable r = new Runnable() {
+    private final Runnable r = new Runnable() {
         @Override
         public void run() {
             p.setVisibility(View.GONE);
@@ -106,6 +109,8 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
         } else if (!Pattern.matches("[0-9a-zA-Z]+", em)) {
             email.setError("No special characters.");
             valid = false;
+        } else if (Globe.dbRef.child(em).getKey() != null) {
+            email.setError("ID already exists!");
         } else {
             email.setError(null);
         }
@@ -157,6 +162,7 @@ public class NewUser extends AppCompatActivity implements View.OnClickListener {
         nUser.put("waketime", 10.0001);
         nUser.put("updated", "---");
         nUser.put("id", email.getText().toString()); // should be an email W/O the @sleep-coffee-research.firebaseapp.com part
+        nUser.put("joinDate", new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().getTime()));
         Globe.dbRef.child(Globe.user.getUid()).updateChildren(nUser);
     }
 

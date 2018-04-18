@@ -128,7 +128,7 @@ public class CoffeeRewards extends AppCompatActivity implements View.OnClickList
                 value = "nil";
             }
             // We want to track the redemption time
-            Globe.dbRef.child(Globe.user.getUid()).child("_coffee").child(new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(c.getTime())).setValue(value);
+            Globe.dbRef.child(Globe.user.getUid()).child("_coffee").child(new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(c.getTime())).child("coffeeRedeemTime").setValue(value);
             redeem.setClickable(false);
             redeem.setBackgroundColor(getResources().getColor(R.color.grayOut));
             dialogue.setText(getResources().getString(R.string.expired));

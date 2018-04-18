@@ -176,19 +176,24 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         int i = v.getId();
-        if (i == R.id.out_home) {
-            signOut();
-        } else if (i == R.id.fitbit_home) {
-            Globe.authFitbit(Home.this);
-        } else if (i == R.id.rewards_home) {
-            // TODO: schedule a handler for this
-            int day = c.get(Calendar.DAY_OF_WEEK); // cannot redeem on saturday or sunday, or before 7:30am
-            if (day == Calendar.SATURDAY || day == Calendar.SUNDAY)
-                Toast.makeText(Home.this, "No coupons on Saturday or Sunday", Toast.LENGTH_SHORT).show();
-            else if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) < 7.5)
-                Toast.makeText(Home.this, "It's before 7:30AM!", Toast.LENGTH_SHORT).show();
-            else
-                Home.this.startActivity(new Intent(Home.this, CoffeeRewards.class));
+        switch (i) {
+            case R.id.out_home:
+                signOut();
+                break;
+            case R.id.fitbit_home:
+                Globe.authFitbit(Home.this);
+                break;
+            case R.id.rewards_home:
+                // TODO: schedule a handler for this
+                int day = c.get(Calendar.DAY_OF_WEEK); // cannot redeem on saturday or sunday, or before 7:30am
+
+                if (day == Calendar.SATURDAY || day == Calendar.SUNDAY)
+                    Toast.makeText(Home.this, "No coupons on Saturday or Sunday", Toast.LENGTH_SHORT).show();
+                else if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) < 5.5)
+                    Toast.makeText(Home.this, "It's before 5:30AM!", Toast.LENGTH_SHORT).show();
+                else
+                    Home.this.startActivity(new Intent(Home.this, CoffeeRewards.class));
+                break;
         }
     }
 
@@ -201,8 +206,12 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             findViewById(R.id.goaltime_home).setVisibility(View.GONE);
             findViewById(R.id.waketime_home).setVisibility(View.GONE);
             // we don't want a bedtime notification if stage is passive
-            if (Globe.am != null && Globe.senderNS != null) { Globe.am.cancel(Globe.senderNS); }
-            if (Globe.am != null && Globe.senderRD != null) { Globe.am.cancel(Globe.senderRD); }
+            if (Globe.am != null) {
+                if (Globe.senderFB != null) Globe.am.cancel(Globe.senderFB);
+                if (Globe.senderNS != null) Globe.am.cancel(Globe.senderNS);
+                if (Globe.senderRD != null) Globe.am.cancel(Globe.senderRD);
+                if (Globe.senderAS != null) Globe.am.cancel(Globe.senderAS);
+            }
         } else { // stage is 1 and group is 1
             // Make these seen if stage is active AND user is in group 1 (experimental)
             if (Globe.DEBUG) Log.d(TAG, "update is else... calcBed is " + calcBed);
@@ -220,9 +229,10 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             // Display waketime
             ((TextView) findViewById(R.id.waketime_home)).setText(String.format(getResources().getString(R.string.yourWake), Globe.timeToString(Globe.wakeTime)));
 
-            // Schedule alarms for bedtime/waketime notifications
+            // Schedule alarms for bedtime/wake-time notifications/redeem checker
             Globe.scheduleAlarm(Home.this, 1);
             Globe.scheduleAlarm(Home.this, 2);
+            Globe.scheduleAlarm(Home.this, 4);
         }
     }
 
@@ -236,10 +246,10 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 Globe.dbRef.child(Globe.user.getUid()).removeEventListener(vUser);
                 Globe.dbRef.child("_stage").removeEventListener(vStage);
                 if (Globe.am != null) { // this crashes if user is not loaded
-                    if (Globe.senderFB != null)
-                        Globe.am.cancel(Globe.senderFB);
-                    if (Globe.senderNS != null)
-                        Globe.am.cancel(Globe.senderNS);
+                    if (Globe.senderFB != null) Globe.am.cancel(Globe.senderFB);
+                    if (Globe.senderNS != null) Globe.am.cancel(Globe.senderNS);
+                    if (Globe.senderRD != null) Globe.am.cancel(Globe.senderRD);
+                    if (Globe.senderAS != null) Globe.am.cancel(Globe.senderAS);
                 }
                 // delete current FitBit login data (+ other cached data)
                 // the average user won't logout of their device and log into someone else's

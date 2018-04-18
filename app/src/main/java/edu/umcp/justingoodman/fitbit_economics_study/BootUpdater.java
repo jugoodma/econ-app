@@ -46,7 +46,8 @@ public class BootUpdater extends BroadcastReceiver {
                             // schedule notifications if stage is active
                             if (Globe.stage == 1) {
                                 Globe.scheduleAlarm(ctx, 1); // bedtime notification
-                                Globe.scheduleAlarm(ctx, 2); // waketime notification
+                                Globe.scheduleAlarm(ctx, 2); // wake-time notification
+                                Globe.scheduleAlarm(ctx, 4); // 10am redemption ask-er
                             }
                         }
 

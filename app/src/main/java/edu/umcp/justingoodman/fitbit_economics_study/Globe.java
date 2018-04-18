@@ -72,8 +72,8 @@ class Globe {
     static final String callback_uri = "scr://callback";
     static final String FITBIT_AUTH_URL = "https://api.fitbit.com/oauth2/token";
     static final String DOMAIN = "@sleep-coffee-research.firebaseapp.com";
+    static final long minSleep = 390; // the minimum sleep duration to earn a coupon (7 hours with 30min leniency)
 
-    static long minSleep = 390; // the minimum sleep duration to earn a coupon (7 hours with 30min leniency)
     static long stage = 0; // 0 = passive stage (0-2 weeks), 1 = active stage (treatment/control groups, 3-6 weeks), 2 = ? (7-8 weeks)
     static long group = 0; // 0 = control group, 1 = treatment group
     static double bedTime = -1f; // goal bedtime
@@ -91,6 +91,7 @@ class Globe {
     static PendingIntent senderNS; // for bedtime notification service
     static PendingIntent senderRD; // for wakeup redeem notification
     static PendingIntent senderMN; // for morning sleep checking
+    static PendingIntent senderAS; // for redeem coupon checking
 
     public static final boolean DEBUG = false; // set to false in production
 
@@ -175,51 +176,78 @@ class Globe {
     static void scheduleAlarm(Context ctx, int type) {
         // type 0 = FitBit updater
         // type 1 = bedtime notification
-        // type 2 = waketime notification
+        // type 2 = wake-time notification
+        // type 3 = wake-time sleep checker
+        // type 4 = 10am coffee redemption ask-er
         if (Globe.am != null) {
             Calendar c = Calendar.getInstance(); // current time
             c.setTimeInMillis(System.currentTimeMillis());
-            if (type == 0) {
-                Intent iFB = new Intent(ctx, DataUpdater.class);
-                iFB.putExtra("type", 0); // 0 = FitBit updater
-                Globe.senderFB = PendingIntent.getBroadcast(ctx, 0, iFB, 0);
-                c.set(Calendar.MINUTE, 55);
-                // start at the 55min mark, 1 hour interval
-                Globe.am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_HOUR, Globe.senderFB);
-            } else if (type == 1) {
-                Intent iNS = new Intent(ctx, DataUpdater.class);
-                iNS.putExtra("type", 1); // 1 = bedtime notification
-                Globe.senderNS = PendingIntent.getBroadcast(ctx, 1, iNS, 0);
-                // calculate bedtime notification
-                double bedtime = Globe.bedTime;
-                bedtime -= Globe.notification; // subtract notification hours
-                if (bedtime < 0)
-                    bedtime += 24f;
-                // setup time for alarm to go off
-                if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) >= bedtime) // make sure we haven't passed the current bedtime
-                    c.add(Calendar.DATE, 1); // add one day, because we passed the notification time
-                c.set(Calendar.HOUR_OF_DAY, (int) bedtime);
-                c.set(Calendar.MINUTE, (int) ((bedtime % 1) * 60));
-                // start at bedtime notification time, 1 day interval (does not need to be exact)
-                Globe.am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_DAY, Globe.senderNS);
-            } else if (type == 2) {
-                Intent iNS = new Intent(ctx, DataUpdater.class);
-                iNS.putExtra("type", 2); // 2 = redeem notification
-                Globe.senderRD = PendingIntent.getBroadcast(ctx, 2, iNS, 0);
-                if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) >= 7.5) // make sure we haven't passed 7:30am
-                    c.add(Calendar.DATE, 1); // add one day, because we passed 7:30am
-                c.set(Calendar.HOUR_OF_DAY, 7);
-                c.set(Calendar.MINUTE, 30);
-                // start at 7:30am, 1 day interval (does not need to be exact)
-                Globe.am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_DAY, Globe.senderRD);
-            } else if (type == 3) {
-                Intent iMN = new Intent(ctx, DataUpdater.class);
-                iMN.putExtra("type", 3); // 3 - waketime sleep check
-                Globe.senderMN = PendingIntent.getBroadcast(ctx, 3, iMN, 0);
-                // no need to edit the calendar, I think...
-                // can't set inexact repeating because this is every 5 minutes :(
-                // start now, 5 minute interval
-                Globe.am.setRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), 5 * 60 * 1000, Globe.senderMN);
+            switch (type) {
+                case 0:
+                    Intent iFB = new Intent(ctx, DataUpdater.class);
+                    iFB.putExtra("type", 0); // 0 = FitBit updater
+
+                    Globe.senderFB = PendingIntent.getBroadcast(ctx, 0, iFB, 0);
+                    c.set(Calendar.MINUTE, 55);
+                    // start at the 55min mark, 1 hour interval
+                    Globe.am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_HOUR, Globe.senderFB);
+                    break;
+                case 1: {
+                    Intent iNS = new Intent(ctx, DataUpdater.class);
+                    iNS.putExtra("type", 1); // 1 = bedtime notification
+
+                    Globe.senderNS = PendingIntent.getBroadcast(ctx, 1, iNS, 0);
+                    // calculate bedtime notification
+                    double bedtime = Globe.bedTime;
+                    bedtime -= Globe.notification; // subtract notification hours
+
+                    if (bedtime < 0)
+                        bedtime += 24f;
+                    // setup time for alarm to go off
+                    if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) >= bedtime) // make sure we haven't passed the current bedtime
+                        c.add(Calendar.DATE, 1); // add one day, because we passed the notification time
+                    c.set(Calendar.HOUR_OF_DAY, (int) bedtime);
+                    c.set(Calendar.MINUTE, (int) ((bedtime % 1) * 60));
+                    // start at bedtime notification time, 1 day interval (does not need to be exact)
+                    Globe.am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_DAY, Globe.senderNS);
+                    break;
+                }
+                case 2: {
+                    Intent iNS = new Intent(ctx, DataUpdater.class);
+                    iNS.putExtra("type", 2); // 2 = redeem notification
+
+                    Globe.senderRD = PendingIntent.getBroadcast(ctx, 2, iNS, 0);
+                    if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) >= 7.5) // make sure we haven't passed 7:30am
+                        c.add(Calendar.DATE, 1); // add one day, because we passed 7:30am
+                    c.set(Calendar.HOUR_OF_DAY, 7);
+                    c.set(Calendar.MINUTE, 30);
+                    // start at 7:30am, 1 day interval (does not need to be exact)
+                    Globe.am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_DAY, Globe.senderRD);
+                    break;
+                }
+                case 3: {
+                    Intent iMN = new Intent(ctx, DataUpdater.class);
+                    iMN.putExtra("type", 3); // 3 - waketime sleep check
+
+                    Globe.senderMN = PendingIntent.getBroadcast(ctx, 3, iMN, 0);
+                    // no need to edit the calendar, I think...
+                    // can't set inexact repeating because this is every 5 minutes :(
+                    // start now, 5 minute interval
+                    Globe.am.setRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), 5 * 60 * 1000, Globe.senderMN);
+                    break;
+                }
+                case 4:
+                    Intent iAS = new Intent(ctx, DataUpdater.class);
+                    iAS.putExtra("type", 4); // 4 - redeem coffee checker
+
+                    Globe.senderAS = PendingIntent.getBroadcast(ctx, 4, iAS, 0);
+                    // set the clock to their wake-time (usually around 10am)
+                    if (c.get(Calendar.HOUR_OF_DAY) + (c.get(Calendar.MINUTE) / 60f) >= Globe.wakeTime) // make sure we have not passed wake-time
+                        c.add(Calendar.DATE, 1); // add one day, because we passed the user's wake-time
+                    c.set(Calendar.HOUR_OF_DAY, (int) Globe.wakeTime);
+                    c.set(Calendar.MINUTE, (int) ((Globe.wakeTime % 1) * 60));
+                    Globe.am.setInexactRepeating(AlarmManager.RTC_WAKEUP, c.getTimeInMillis(), AlarmManager.INTERVAL_DAY, Globe.senderAS);
+                    break;
             }
         }
     }
@@ -343,8 +371,8 @@ class Globe {
     static void collectData(final Context ctx) {
         final TaskCompletionSource<Boolean> tcs1 = new TaskCompletionSource<>();
         final TaskCompletionSource<Boolean> tcs2 = new TaskCompletionSource<>();
-        Task<Boolean> t1 = tcs1.getTask();
-        Task<Boolean> t2 = tcs2.getTask();
+        @SuppressWarnings("unused") Task<Boolean> t1 = tcs1.getTask();
+        @SuppressWarnings("unused") Task<Boolean> t2 = tcs2.getTask();
 
         // Dates and such
         Calendar c = Calendar.getInstance();
@@ -380,7 +408,8 @@ class Globe {
                                 String battery = (String) test.get("battery");
                                 // set db and send notification if battery is 'Empty' or 'Low'
                                 if ("Low".equals(battery) || "Empty".equals(battery)) {
-                                    Globe.dbRef.child(Globe.user.getUid()).child("_battery").child((String) test.get("deviceVersion")).child(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Calendar.getInstance().getTime())).setValue(battery);
+                                    String time = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Calendar.getInstance().getTime());
+                                    Globe.dbRef.child(Globe.user.getUid()).child("_battery").child(time.substring(0,10)).child("batteryTimes").child(time.substring(11)).setValue(battery);
 
                                     NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
                                     if (nm != null) {

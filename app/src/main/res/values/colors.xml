@@ -5,7 +5,6 @@
     <color name="colorAccent">#F3E500</color>
     <color name="grayOut">@android:color/darker_gray</color>
     <color name="orange">@android:color/holo_orange_dark</color>
-    <color name="green">@android:color/holo_green_dark</color>
     <color name="red">@android:color/holo_red_light</color>
     <color name="transparent">@android:color/transparent</color>
 </resources>

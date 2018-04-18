@@ -46,7 +46,7 @@ public class Launcher extends AppCompatActivity implements View.OnClickListener 
         mPasswordField = findViewById(R.id.password);
         p = findViewById(R.id.progressbar);
         p.setIndeterminate(true);
-        p.setVisibility(View.GONE);
+        p.setVisibility(View.INVISIBLE);
 
         // Set click listeners for the buttons
         findViewById(R.id.signIn).setOnClickListener(Launcher.this);
@@ -111,10 +111,12 @@ public class Launcher extends AppCompatActivity implements View.OnClickListener 
 
                     if (!task.isSuccessful()) {
                         if (Globe.DEBUG) Log.d(TAG, "sorry");
-                        p.setVisibility(View.GONE);
+                        p.setVisibility(View.INVISIBLE);
                     }
                 }
             });
+        } else {
+            p.setVisibility(View.INVISIBLE);
         }
     }
 
